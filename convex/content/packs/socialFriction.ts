@@ -27,6 +27,7 @@ export const socialFrictionPack = defineContentPack({
       ],
       tags: ['roommate', 'boundary', 'conflict'],
       enabledByDefault: true,
+      lifeContext: { firstWeekDays: [5, 7] },
     },
     {
       id: 'group_chat_ambiguity_01',
@@ -52,6 +53,7 @@ export const socialFrictionPack = defineContentPack({
       ],
       tags: ['group-chat', 'ambiguity', 'peer-relations'],
       enabledByDefault: true,
+      lifeContext: { firstWeekDays: [5] },
     },
     {
       id: 'group_credit_01',
@@ -78,6 +80,7 @@ export const socialFrictionPack = defineContentPack({
       ],
       tags: ['group-work', 'fairness', 'conflict'],
       enabledByDefault: true,
+      lifeContext: { firstWeekDays: [5] },
     },
     {
       id: 'queue_cutting_01',
@@ -99,6 +102,7 @@ export const socialFrictionPack = defineContentPack({
       ],
       tags: ['daily-life', 'boundary', 'annoyance'],
       enabledByDefault: true,
+      lifeContext: { firstWeekDays: [5, 6] },
     },
     {
       id: 'excluded_meetup_01',
@@ -125,6 +129,7 @@ export const socialFrictionPack = defineContentPack({
       ],
       tags: ['friendship', 'social-media', 'rejection'],
       enabledByDefault: true,
+      lifeContext: { firstWeekDays: [6, 7] },
     },
     {
       id: 'borrowed_item_01',
@@ -146,6 +151,7 @@ export const socialFrictionPack = defineContentPack({
       ],
       tags: ['friendship', 'boundary', 'reliability'],
       enabledByDefault: true,
+      lifeContext: { firstWeekDays: [5, 7] },
     },
   ],
 });
