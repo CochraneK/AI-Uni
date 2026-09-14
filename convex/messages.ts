@@ -2,6 +2,7 @@ import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 import { insertInput } from './aiTown/insertInput';
 import { conversationId, playerId } from './aiTown/ids';
+import { writeTelemetryForHumanToken } from './research/telemetry';
 
 export const listMessages = query({
   args: {
@@ -44,6 +45,28 @@ export const writeMessage = mutation({
       text: args.text,
       worldId: args.worldId,
     });
+
+    const world = await ctx.db.get(args.worldId);
+    const author = world?.players.find((player) => player.id === args.playerId);
+    if (author?.human) {
+      const conversation = world?.conversations.find(
+        (candidate) => candidate.id === args.conversationId,
+      );
+      const otherPlayerId = conversation
+        ? [...conversation.participants.keys()].find((id) => id !== args.playerId)
+        : undefined;
+      await writeTelemetryForHumanToken(ctx, author.human, {
+        eventType: 'dialogue',
+        action: 'human_message_sent',
+        npcId: otherPlayerId,
+        payload: {
+          conversationId: args.conversationId,
+          characterCount: args.text.length,
+          direction: 'human_to_npc',
+        },
+      });
+    }
+
     await insertInput(ctx, args.worldId, 'finishSendingMessage', {
       conversationId: args.conversationId,
       playerId: args.playerId,
