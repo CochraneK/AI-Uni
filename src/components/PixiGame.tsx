@@ -28,6 +28,7 @@ export const PixiGame = (props: {
   height: number;
   humanPlayerId?: GameId<'players'>;
   scenarioRuntime: ScenarioRuntimeView;
+  onFocusActivity: (activityId: string) => void;
   setSelectedElement: SelectElement;
 }) => {
   // PIXI setup.
@@ -124,7 +125,8 @@ export const PixiGame = (props: {
           tileDim={tileDim}
           currentLocationId={currentLocationId}
           recommendedLocationId={recommendedLocationId}
-          onNavigate={(_interactable, destination) => {
+          onNavigate={(interactable, destination) => {
+            props.onFocusActivity(interactable.activityId);
             void navigateTo(destination);
           }}
         />
