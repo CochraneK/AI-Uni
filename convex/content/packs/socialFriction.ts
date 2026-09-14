@@ -15,6 +15,7 @@ export const socialFrictionPack = defineContentPack({
       ordinaryGoal: '和室友商量熄灯、空调与清洁安排。',
       setup: '两名室友的作息不同，其中一人说话比较强势，大家需要共同决定宿舍规则。',
       estimatedMinutes: 35,
+      timeWindows: [{ start: '19:30', end: '22:45', label: '晚间宿舍协调' }],
       npcRoles: ['roommate_early', 'roommate_late'],
       hiddenTargets: ['big5.agreeableness', 'big5.conscientiousness', 'emotion.regulation'],
       safetyLevel: 'ordinary',
@@ -38,6 +39,10 @@ export const socialFrictionPack = defineContentPack({
       ordinaryGoal: '和同学吃饭并处理课程群里的新消息。',
       setup: '课程群出现一句没有点名的抱怨，几位同学对它在说谁有不同看法。',
       estimatedMinutes: 20,
+      timeWindows: [
+        { start: '11:30', end: '14:30', label: '午饭时段' },
+        { start: '17:00', end: '19:30', label: '晚饭时段' },
+      ],
       npcRoles: ['friend', 'classmate'],
       hiddenTargets: [
         'cape.persecutory_ideation',
@@ -65,6 +70,7 @@ export const socialFrictionPack = defineContentPack({
       ordinaryGoal: '完成小组汇报并确认最终署名与分工说明。',
       setup: '一名贡献较少的组员在群里暗示自己承担了大部分工作，其他人反应不一。',
       estimatedMinutes: 40,
+      timeWindows: [{ start: '13:00', end: '21:30', label: '小组任务时段' }],
       npcRoles: ['teammate_dominant', 'teammate_quiet', 'classmate'],
       hiddenTargets: [
         'big5.agreeableness',
@@ -93,6 +99,10 @@ export const socialFrictionPack = defineContentPack({
       ordinaryGoal: '买到午饭并按原计划和朋友汇合。',
       setup: '排队时一名认识但不熟的同学直接站到前面，还笑着说“帮我占一下呗”。',
       estimatedMinutes: 15,
+      timeWindows: [
+        { start: '11:30', end: '14:00', label: '午饭高峰' },
+        { start: '17:00', end: '19:30', label: '晚饭高峰' },
+      ],
       npcRoles: ['pushy_classmate', 'friend', 'student_bystander'],
       hiddenTargets: ['big5.agreeableness', 'emotion.regulation', 'social.trust'],
       safetyLevel: 'ordinary',
@@ -116,6 +126,7 @@ export const socialFrictionPack = defineContentPack({
       ordinaryGoal: '安排自己的晚上并处理朋友发来的消息。',
       setup: '玩家从朋友圈看到几个熟悉同学正在聚餐，之前没有人邀请自己；稍后其中一人私聊问明天是否一起上课。',
       estimatedMinutes: 25,
+      timeWindows: [{ start: '18:00', end: '22:30', label: '晚间宿舍时间' }],
       npcRoles: ['friend', 'classmate'],
       hiddenTargets: [
         'social.rejection_sensitivity',
@@ -144,6 +155,7 @@ export const socialFrictionPack = defineContentPack({
       ordinaryGoal: '拿回自己明天要用的物品。',
       setup: '同学几天前借走一件常用物品，已经两次说“晚上还”，但现在仍没送回来。',
       estimatedMinutes: 20,
+      timeWindows: [{ start: '18:00', end: '22:30', label: '晚间宿舍时间' }],
       npcRoles: ['unreliable_classmate', 'roommate'],
       hiddenTargets: ['social.trust', 'big5.agreeableness', 'emotion.regulation'],
       safetyLevel: 'ordinary',
