@@ -30,6 +30,12 @@ export type ScenarioDefinition = {
   location: WorldLocationId;
   ordinaryGoal: string;
   setup: string;
+  /**
+   * Narrative time block reserved when the scene is completed. This is authored
+   * explicitly from the ordinary-life fiction; it must never be inferred from
+   * safetyLevel, researchUse or hidden psychological targets.
+   */
+  estimatedMinutes: number;
   npcRoles: string[];
   hiddenTargets: ConstructId[];
   safetyLevel: ScenarioSafetyLevel;
