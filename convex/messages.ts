@@ -52,9 +52,9 @@ export const writeMessage = mutation({
       const conversation = world?.conversations.find(
         (candidate) => candidate.id === args.conversationId,
       );
-      const otherPlayerId = conversation
-        ? [...conversation.participants.keys()].find((id) => id !== args.playerId)
-        : undefined;
+      const otherPlayerId = conversation?.participants.find(
+        (participant) => participant.playerId !== args.playerId,
+      )?.playerId;
       await writeTelemetryForHumanToken(ctx, author.human, {
         eventType: 'dialogue',
         action: 'human_message_sent',
