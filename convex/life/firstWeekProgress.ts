@@ -140,8 +140,13 @@ export const evaluateFirstWeekReadiness = async (
   profileId: any,
   includeCurrentDay?: number,
 ): Promise<FirstWeekReadiness> => {
-  const progress = (await getProgress(ctx, profileId)) ?? (await getOrCreateProgress(ctx, profileId));
-  const completedDays = progress?.completedDays ?? [];
+  // This helper is used by both queries and mutations. Keep evaluation strictly
+  // read-only: query handlers do not have db.insert/db.patch. Progress rows are
+  // created only when gameplay actually records a day, scenario, activity or NPC
+  // interaction through the mutation helpers above.
+  const progress = await getProgress(ctx, profileId);
+  const profile = progress ? null : await ctx.db.get(profileId);
+  const completedDays = progress?.completedDays ?? inferredCompletedDays(profile);
   const effectiveDays = includeCurrentDay
     ? uniqueNumberAppend(completedDays, includeCurrentDay)
     : completedDays;
