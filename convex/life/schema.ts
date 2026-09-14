@@ -24,6 +24,16 @@ export const lifeTables = {
     .index('bySession', ['sessionId'])
     .index('byUniversityProfile', ['universityProfileId']),
 
+  firstWeekProgress: defineTable({
+    profileId: v.id('lifeProfiles'),
+    completedDays: v.array(v.number()),
+    completedScenarioIds: v.array(v.string()),
+    ordinaryScenarioIds: v.array(v.string()),
+    distinctNpcIds: v.array(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index('byProfile', ['profileId']),
+
   familySystemStates: defineTable({
     profileId: v.id('lifeProfiles'),
     generation: v.number(),
