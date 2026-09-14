@@ -7,6 +7,8 @@ import * as gentlewaterfall from '../../data/animations/gentlewaterfall.json';
 import * as gentlesplash from '../../data/animations/gentlesplash.json';
 import * as windmill from '../../data/animations/windmill.json';
 
+const genericCampusTilesetUrl = new URL('../../assets/generic-campus-v1.png', import.meta.url).href;
+
 const animations = {
   'campfire.json': { spritesheet: campfire, url: '/ai-uni/assets/spritesheets/campfire.png' },
   'gentlesparkle.json': {
@@ -18,16 +20,21 @@ const animations = {
     url: '/ai-uni/assets/spritesheets/gentlewaterfall32.png',
   },
   'windmill.json': { spritesheet: windmill, url: '/ai-uni/assets/spritesheets/windmill.png' },
-  'gentlesplash.json': { spritesheet: gentlesplash,
-    url: '/ai-uni/assets/spritesheets/gentlewaterfall32.png',},
+  'gentlesplash.json': {
+    spritesheet: gentlesplash,
+    url: '/ai-uni/assets/spritesheets/gentlewaterfall32.png',
+  },
 };
+
+const resolveTilesetUrl = (url: string) =>
+  url.includes('generic-campus-v1.png') ? genericCampusTilesetUrl : url;
 
 export const PixiStaticMap = PixiComponent('StaticMap', {
   create: (props: { map: WorldMap; [k: string]: any }) => {
     const map = props.map;
     const numxtiles = Math.floor(map.tileSetDimX / map.tileDim);
     const numytiles = Math.floor(map.tileSetDimY / map.tileDim);
-    const bt = PIXI.BaseTexture.from(map.tileSetUrl, {
+    const bt = PIXI.BaseTexture.from(resolveTilesetUrl(map.tileSetUrl), {
       scaleMode: PIXI.SCALE_MODES.NEAREST,
     });
 
