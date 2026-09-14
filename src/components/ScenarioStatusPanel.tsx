@@ -20,7 +20,9 @@ export default function ScenarioStatusPanel(props: {
 }) {
   const [dayEndMessage, setDayEndMessage] = useState<string>();
   const [activityMessage, setActivityMessage] = useState<string>();
+  const [scenarioMessage, setScenarioMessage] = useState<string>();
   const [runningActivityId, setRunningActivityId] = useState<string>();
+  const [completingScenario, setCompletingScenario] = useState(false);
   const { runtime, locationId, activeScenario, universityProfile, profile } =
     props.scenarioRuntime;
 
@@ -51,6 +53,14 @@ export default function ScenarioStatusPanel(props: {
     : [];
   const reachedActivityLimit =
     completedActivityIds.length >= campusActivityRules.maxDistinctActivitiesPerDay;
+  const activeScenarioFitsToday =
+    activeScenario && dayClock
+      ? canSpendMinutes(dayClock, activeScenario.estimatedMinutes)
+      : true;
+  const activeScenarioEndTime =
+    activeScenario && dayClock && activeScenarioFitsToday
+      ? formatGameMinute(dayClock.minute + activeScenario.estimatedMinutes)
+      : undefined;
 
   if (!props.humanPlayerId) {
     return null;
@@ -95,22 +105,57 @@ export default function ScenarioStatusPanel(props: {
 
       {activeScenario ? (
         <div className="mt-4">
-          <div className="text-base font-semibold text-brown-100">{activeScenario.title}</div>
+          <div className="flex items-start justify-between gap-3">
+            <div className="text-base font-semibold text-brown-100">{activeScenario.title}</div>
+            <div className="shrink-0 text-xs text-brown-400">
+              约 {activeScenario.estimatedMinutes} 分钟
+              {activeScenarioEndTime ? ` · 至 ${activeScenarioEndTime}` : ''}
+            </div>
+          </div>
           <p className="mt-2 text-sm leading-6 text-brown-200">{activeScenario.setup}</p>
           <p className="mt-2 text-sm text-brown-300">
             当前目标：{activeScenario.ordinaryGoal}
           </p>
           <p className="mt-2 text-xs leading-5 text-brown-400">
-            和事件相关的人自然交谈会推进事件；也可以在你认为事情已经处理完时手动结束。
+            和事件相关的人自然交谈会推进事件；也可以在你认为事情已经处理完时手动结束。事件完成后才会一次性推进游戏时间。
           </p>
+          {!activeScenarioFitsToday && (
+            <p className="mt-2 text-xs leading-5 text-brown-300">
+              这是旧存档中已开始的事件，当前剩余时间不足以正常结算；可以结束今天来中止事件。
+            </p>
+          )}
           {runtime && (
             <button
-              className="mt-3 rounded bg-brown-600 px-3 py-2 text-sm font-semibold text-brown-50 hover:bg-brown-500"
-              onClick={() =>
-                void completeActiveScenario({ runtimeId: runtime._id, outcome: 'completed_by_player' })
-              }
+              className="mt-3 rounded bg-brown-600 px-3 py-2 text-sm font-semibold text-brown-50 hover:bg-brown-500 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={completingScenario}
+              onClick={() => {
+                setScenarioMessage(undefined);
+                setCompletingScenario(true);
+                void completeActiveScenario({
+                  runtimeId: runtime._id,
+                  outcome: 'completed_by_player',
+                })
+                  .then((result) => {
+                    if (result.completed) {
+                      setScenarioMessage(`这件事处理完了。现在是 ${result.gameTime}。`);
+                      return;
+                    }
+                    if (result.reason === 'not_enough_time') {
+                      setScenarioMessage('今天剩余时间不足以完成这件事；可以结束今天，让事件中止。');
+                      return;
+                    }
+                    setScenarioMessage('这件事已经结束或不再是当前事件。');
+                  })
+                  .catch((error) => {
+                    console.error('Failed to complete AI-Uni scenario', error);
+                    setScenarioMessage('这件事暂时无法完成，请稍后再试。');
+                  })
+                  .finally(() => setCompletingScenario(false));
+              }}
             >
-              完成这件事
+              {completingScenario
+                ? '正在完成…'
+                : `完成这件事 · 约 ${activeScenario.estimatedMinutes} 分钟`}
             </button>
           )}
         </div>
@@ -184,6 +229,12 @@ export default function ScenarioStatusPanel(props: {
             </div>
           )}
         </div>
+      )}
+
+      {scenarioMessage && (
+        <p className="mt-4 rounded bg-brown-800 px-3 py-2 text-sm leading-6 text-brown-200">
+          {scenarioMessage}
+        </p>
       )}
 
       {activityMessage && (
