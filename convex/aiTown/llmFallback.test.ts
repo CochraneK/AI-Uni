@@ -52,14 +52,23 @@ describe('cloud-safe NPC LLM fallback', () => {
     ).toBe(true);
   });
 
-  test('supports explicit scripted and llm overrides', () => {
-    expect(shouldUseScriptedNpcFallback({ AI_UNI_NPC_MODE: 'scripted' })).toBe(true);
+  test('forced llm mode still falls back when the only endpoint is loopback', () => {
     expect(
       shouldUseScriptedNpcFallback({
         AI_UNI_NPC_MODE: 'llm',
         OLLAMA_HOST: 'http://127.0.0.1:11434',
       }),
+    ).toBe(true);
+    expect(
+      shouldUseScriptedNpcFallback({
+        AI_UNI_NPC_MODE: 'llm',
+        DEEPSEEK_API_KEY: 'configured',
+      }),
     ).toBe(false);
+  });
+
+  test('supports an explicit scripted override', () => {
+    expect(shouldUseScriptedNpcFallback({ AI_UNI_NPC_MODE: 'scripted' })).toBe(true);
   });
 
   test('produces short scenario-aware deterministic dialogue', () => {
