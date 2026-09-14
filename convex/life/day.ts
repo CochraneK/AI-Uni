@@ -7,6 +7,7 @@ import {
   recordFirstWeekOrdinaryActivity,
 } from './firstWeekProgress';
 import { campusActivityRules, getCampusActivity } from './activities';
+import { closeOpenCommitmentsForDay } from './commitments';
 import {
   UNIVERSITY_DAY_START_MINUTE,
   formatGameMinute,
@@ -251,6 +252,9 @@ export const endFirstWeekDay = mutation({
       });
     }
 
+    // Attendance is ordinary life state, not a psychometric shortcut. Required
+    // unresolved commitments become missed; optional unresolved plans become skipped.
+    await closeOpenCommitmentsForDay(ctx, profile, now);
     await markFirstWeekDayCompleted(ctx, args.profileId, completedDay);
 
     const previousState =
