@@ -19,11 +19,7 @@ export type MinimalTelemetryEvent = {
   payload?: unknown;
 };
 
-export const researchContextForHumanToken = async (ctx: any, humanToken: string) => {
-  const profile = await ctx.db
-    .query('lifeProfiles')
-    .withIndex('byProfileKey', (q: any) => q.eq('profileKey', `ai-uni:${humanToken}`))
-    .first();
+const researchContextForProfile = async (ctx: any, profile: any) => {
   if (!profile?.sessionId) return null;
 
   const runtime = await ctx.db
@@ -36,6 +32,19 @@ export const researchContextForHumanToken = async (ctx: any, humanToken: string)
   if (!session || session.endedAt) return null;
 
   return { profile, runtime, session };
+};
+
+export const researchContextForHumanToken = async (ctx: any, humanToken: string) => {
+  const profile = await ctx.db
+    .query('lifeProfiles')
+    .withIndex('byProfileKey', (q: any) => q.eq('profileKey', `ai-uni:${humanToken}`))
+    .first();
+  return await researchContextForProfile(ctx, profile);
+};
+
+export const researchContextForProfileId = async (ctx: any, profileId: any) => {
+  const profile = await ctx.db.get(profileId);
+  return await researchContextForProfile(ctx, profile);
 };
 
 export const writeMinimalTelemetry = async (
@@ -57,12 +66,11 @@ export const writeMinimalTelemetry = async (
   });
 };
 
-export const writeTelemetryForHumanToken = async (
+const writeFromResearchContext = async (
   ctx: any,
-  humanToken: string,
+  context: any,
   event: MinimalTelemetryEvent,
 ) => {
-  const context = await researchContextForHumanToken(ctx, humanToken);
   if (!context) return false;
   await writeMinimalTelemetry(ctx, context.session._id, {
     ...event,
@@ -72,6 +80,28 @@ export const writeTelemetryForHumanToken = async (
   });
   return true;
 };
+
+export const writeTelemetryForHumanToken = async (
+  ctx: any,
+  humanToken: string,
+  event: MinimalTelemetryEvent,
+) =>
+  await writeFromResearchContext(
+    ctx,
+    await researchContextForHumanToken(ctx, humanToken),
+    event,
+  );
+
+export const writeTelemetryForProfile = async (
+  ctx: any,
+  profileId: any,
+  event: MinimalTelemetryEvent,
+) =>
+  await writeFromResearchContext(
+    ctx,
+    await researchContextForProfileId(ctx, profileId),
+    event,
+  );
 
 export const telemetryDataMinimizationRules = [
   'Ordinary gameplay must function with behavioralResearchConsent=false.',
