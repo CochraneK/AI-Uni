@@ -7,6 +7,7 @@ import { ConvexProvider, useConvex, useQuery } from 'convex/react';
 import PlayerDetails from './PlayerDetails.tsx';
 import ScenarioStatusPanel from './ScenarioStatusPanel.tsx';
 import CampusTravelStatus from './CampusTravelStatus.tsx';
+import ScheduledCommitmentsPanel from './ScheduledCommitmentsPanel.tsx';
 import { api } from '../../convex/_generated/api';
 import { useWorldHeartbeat } from '../hooks/useWorldHeartbeat.ts';
 import { useHistoricalTime } from '../hooks/useHistoricalTime.ts';
@@ -89,6 +90,7 @@ https://github.com/michalochman/react-pixi-fiber/issues/145#issuecomment-5315492
           ref={scrollViewRef}
         >
           <CampusTravelStatus scenarioRuntime={scenarioRuntime} />
+          <ScheduledCommitmentsPanel scenarioRuntime={scenarioRuntime} />
           <ScenarioStatusPanel
             humanPlayerId={humanPlayerId}
             scenarioRuntime={scenarioRuntime}
