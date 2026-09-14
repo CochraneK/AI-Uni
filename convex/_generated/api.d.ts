@@ -35,6 +35,7 @@ import type * as engine_abstractGame from "../engine/abstractGame.js";
 import type * as engine_historicalObject from "../engine/historicalObject.js";
 import type * as http from "../http.js";
 import type * as init from "../init.js";
+import type * as life_commitments from "../life/commitments.js";
 import type * as life_day from "../life/day.js";
 import type * as life_state from "../life/state.js";
 import type * as messages from "../messages.js";
@@ -90,6 +91,7 @@ declare const fullApi: ApiFromModules<{
   "engine/historicalObject": typeof engine_historicalObject;
   http: typeof http;
   init: typeof init;
+  "life/commitments": typeof life_commitments;
   "life/day": typeof life_day;
   "life/state": typeof life_state;
   messages: typeof messages;
