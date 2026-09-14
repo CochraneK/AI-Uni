@@ -5,6 +5,7 @@ import type { Id } from '../../convex/_generated/dataModel';
 import type { ServerGame } from '../hooks/serverGame';
 import { resolveCampusDisplayName } from '../../convex/campus/registry';
 import { worldLocations } from '../../convex/world/locations';
+import { campusActivityRules, getCampusActivities } from '../../convex/life/activities';
 import { useScenarioRuntime } from '../hooks/useScenarioRuntime';
 
 export default function ScenarioStatusPanel(props: {
@@ -12,6 +13,8 @@ export default function ScenarioStatusPanel(props: {
   game: ServerGame;
 }) {
   const [dayEndMessage, setDayEndMessage] = useState<string>();
+  const [activityMessage, setActivityMessage] = useState<string>();
+  const [runningActivityId, setRunningActivityId] = useState<string>();
   const humanTokenIdentifier = useQuery(api.world.userStatus, { worldId: props.worldId }) ?? null;
   const humanPlayerId = [...props.game.world.players.values()].find(
     (player) => player.human === humanTokenIdentifier,
@@ -24,6 +27,7 @@ export default function ScenarioStatusPanel(props: {
     humanTokenIdentifier,
   });
   const completeActiveScenario = useMutation(api.scenarios.runtime.completeActiveScenario);
+  const performCampusActivity = useMutation(api.life.day.performCampusActivity);
   const endFirstWeekDay = useMutation(api.life.day.endFirstWeekDay);
   const firstWeekStatus = useQuery(
     api.life.day.getFirstWeekStatus,
@@ -37,6 +41,19 @@ export default function ScenarioStatusPanel(props: {
       : baseLocationName;
   const isFirstWeek = profile?.chapterId === 'university_first_week';
   const isFinalFirstWeekDay = isFirstWeek && profile?.chapterUnit === 7;
+  const activities = !activeScenario && locationId ? getCampusActivities(locationId) : [];
+  const currentActivityDayKey = profile
+    ? `${profile.chapterId}:${profile.chapterUnit}:${profile.totalGameDays}`
+    : undefined;
+  const activityState =
+    profile?.state?.campusActivities?.dayKey === currentActivityDayKey
+      ? profile.state.campusActivities
+      : undefined;
+  const completedActivityIds: string[] = Array.isArray(activityState?.completedIds)
+    ? activityState.completedIds
+    : [];
+  const reachedActivityLimit =
+    completedActivityIds.length >= campusActivityRules.maxDistinctActivitiesPerDay;
 
   if (!humanPlayerId) {
     return null;
@@ -93,8 +110,70 @@ export default function ScenarioStatusPanel(props: {
           )}
         </div>
       ) : (
-        <p className="mt-4 text-sm leading-6 text-brown-300">
-          现在没有必须处理的事件。可以随便走走、找人聊天，或者去别的地方看看。
+        <div className="mt-4">
+          <p className="text-sm leading-6 text-brown-300">
+            现在没有必须处理的事件。可以找人聊天，也可以在这里做点普通的小事。
+          </p>
+
+          {profile && activities.length > 0 && (
+            <div className="mt-3 rounded border border-brown-700 bg-brown-900/30 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm font-semibold text-brown-100">在这里做点什么</div>
+                <div className="text-xs text-brown-400">
+                  今日 {completedActivityIds.length} / {campusActivityRules.maxDistinctActivitiesPerDay}
+                </div>
+              </div>
+              <div className="mt-2 grid gap-2">
+                {activities.map((activity) => {
+                  const completed = completedActivityIds.includes(activity.id);
+                  const disabled =
+                    completed || reachedActivityLimit || runningActivityId !== undefined;
+                  return (
+                    <button
+                      key={activity.id}
+                      className="rounded border border-brown-700 px-3 py-2 text-left hover:bg-brown-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={disabled}
+                      onClick={() => {
+                        setActivityMessage(undefined);
+                        setRunningActivityId(activity.id);
+                        void performCampusActivity({
+                          profileId: profile._id,
+                          activityId: activity.id,
+                        })
+                          .then((result) => setActivityMessage(result.message))
+                          .catch((error) => {
+                            console.error('Failed to perform AI-Uni campus activity', error);
+                            setActivityMessage('这件事现在做不了，换个位置再试试。');
+                          })
+                          .finally(() => setRunningActivityId(undefined));
+                      }}
+                    >
+                      <div className="flex items-center justify-between gap-3 text-sm font-semibold text-brown-100">
+                        <span>{activity.title}</span>
+                        <span className="text-xs font-normal text-brown-400">
+                          {completed ? '今天做过' : `约 ${activity.estimatedMinutes} 分钟`}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-xs leading-5 text-brown-400">
+                        {activity.description}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              {reachedActivityLimit && (
+                <p className="mt-2 text-xs leading-5 text-brown-400">
+                  今天的自由活动已经够丰富了；接下来更适合聊天、处理生活事件或结束今天。
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activityMessage && (
+        <p className="mt-4 rounded bg-brown-800 px-3 py-2 text-sm leading-6 text-brown-200">
+          {activityMessage}
         </p>
       )}
 
