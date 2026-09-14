@@ -18,37 +18,39 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
+      - name: Explain missing Pages backend config
+        if: ${{ vars.VITE_CONVEX_URL == '' }}
+        run: |
+          echo "GitHub Pages publishing is prepared but currently skipped."
+          echo "Set repository Actions variable VITE_CONVEX_URL to the live Convex deployment URL, then run this workflow again."
+
       - name: Checkout
+        if: ${{ vars.VITE_CONVEX_URL != '' }}
         uses: actions/checkout@v4
 
       - name: Setup Node
+        if: ${{ vars.VITE_CONVEX_URL != '' }}
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
       - name: Install dependencies
+        if: ${{ vars.VITE_CONVEX_URL != '' }}
         run: npm ci
 
-      - name: Verify Convex deployment URL
-        env:
-          VITE_CONVEX_URL: ${{ vars.VITE_CONVEX_URL }}
-        run: |
-          if [ -z "$VITE_CONVEX_URL" ]; then
-            echo "Missing repository variable VITE_CONVEX_URL."
-            echo "Create Settings > Secrets and variables > Actions > Variables > VITE_CONVEX_URL with the public Convex deployment URL."
-            exit 1
-          fi
-
       - name: Build AI-Uni
+        if: ${{ vars.VITE_CONVEX_URL != '' }}
         env:
           VITE_CONVEX_URL: ${{ vars.VITE_CONVEX_URL }}
         run: npm run build
 
       - name: Keep GitHub Pages from running Jekyll
+        if: ${{ vars.VITE_CONVEX_URL != '' }}
         run: touch dist/.nojekyll
 
       - name: Publish gh-pages branch
+        if: ${{ vars.VITE_CONVEX_URL != '' }}
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
