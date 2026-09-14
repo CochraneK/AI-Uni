@@ -8,7 +8,7 @@ import type {
 import type { WorldLocationId } from '../world/locations';
 
 export type ScenarioSafetyLevel = 'ordinary' | 'mild_stress' | 'sensitive';
-export type ResearchUse = 'behavioral_feature' | 'exploratory_only';
+export type ResearchUse = 'none' | 'behavioral_feature' | 'exploratory_only';
 
 export type ScenarioLifeContext = {
   seasons?: LifeSeasonId[];
