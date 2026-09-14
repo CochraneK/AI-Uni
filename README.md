@@ -1,8 +1,10 @@
 # AI-Uni
 
-**大学生活世界 × LLM NPC × 情境行为研究 × 长期人生模拟**
+**大学生活世界 × LLM NPC × 人生历程 × 情境行为研究**
 
-AI-Uni 是一个基于多智能体虚拟世界的大学生活、人生发展与心理行为研究原型。第一阶段以北京交通大学风格的校园生活为起点，之后逐步扩展到校外生活、考试、放假、升年级、毕业、实习、工作、亲密关系、家庭、中年、退休和生命回顾。
+AI-Uni 是一个基于多智能体虚拟世界的大学生活、人生发展与心理行为研究原型。默认世界不绑定任何一所真实大学，而是模拟广泛意义上的大学生活；之后再通过可插拔的 University Template 加载特定大学地图、地点显示名、校园文化和专属事件。
+
+从大学阶段开始，AI-Uni 会逐步扩展到校外生活、考试、假期、升年级、毕业、实习、工作、亲密关系、家庭、中年、退休和生命回顾。
 
 项目的核心原则是：**先让它像一个真实、可玩的生活世界，再把心理测量作为后台研究层。**
 
@@ -13,16 +15,25 @@ AI-Uni 是一个基于多智能体虚拟世界的大学生活、人生发展与�
 ```text
 AI-Uni
 │
-├── 人生世界
+├── Generic University Core
 │   ├── 大学第一周（7 个完整可玩日）
+│   ├── 课程 / 考试 / 社团 / 住宿或通勤 / 朋友
 │   ├── 大一 / 大二 / 大三 / 大四 / 毕业
+│   └── 可配置学制、学期制、校园类型与住宿结构
+│
+├── University Templates
+│   ├── generic_university（默认）
+│   ├── bjtu_inspired（planned / optional）
+│   └── future templates...
+│
+├── 人生世界
 │   ├── 实习 / 求职 / 第一份工作 / 跳槽 / 转行
 │   ├── 亲密关系 / 婚姻或其他长期关系 / 家庭
 │   ├── 中年 / 照护 / 职业后期
 │   └── 退休 / 晚年 / 生命回顾
 │
 ├── LLM NPC
-│   ├── 同学 / 室友 / 老师 / 社团成员
+│   ├── 同学 / 同住者 / 老师 / 社团成员
 │   ├── 朋友 / 伴侣 / 家庭成员
 │   ├── 同事 / 上司 / 导师
 │   └── 可以跨越多年持续存在的重要关系
@@ -56,6 +67,70 @@ AI-Uni
     ├── PCL-5 associated constructs
     └── future measures
 ```
+
+## 通用大学核心
+
+AI-Uni 的场景逻辑使用稳定、跨学校的功能地点 ID：
+
+```text
+campus_gate
+teaching_building
+library
+student_center
+cafeteria
+campus_green
+sports_field
+dormitory
+```
+
+场景只需要知道“这是教学楼”或“这是校园公共空间”，不需要知道真实学校的建筑名。
+
+具体学校模板可以覆盖显示名称，例如：
+
+```text
+teaching_building → 某校具体教学楼名称
+campus_green      → 某校具体公共空间名称
+```
+
+但底层场景、人生状态和研究数据仍然使用通用 ID。
+
+`convex/campus/profiles.ts` 定义大学 profile，可配置：
+
+- research / teaching / liberal-arts / applied / community-college 等 institution model；
+- residential / commuter / hybrid / distributed campus；
+- urban / suburban / town / rural；
+- semester / quarter / trimester / custom calendar；
+- 学制长度；
+- 住宿可得性和通勤比例；
+- 校园开放程度；
+- 地点显示名覆盖；
+- 地图和主题 Content Pack。
+
+详见 [`docs/UNIVERSITY_CORE.md`](docs/UNIVERSITY_CORE.md)。
+
+## 特定大学模板
+
+特定大学不是产品核心依赖，而是可选扩展。
+
+当前模板注册表：
+
+```text
+generic_university  core / default
+bjtu_inspired       planned / optional
+```
+
+此前积累的北交大风格设计已迁移成可选模板，不再作为 AI-Uni 默认世界。详见 [`docs/templates/BJTU_TEMPLATE.md`](docs/templates/BJTU_TEMPLATE.md)。
+
+未来同样可以加入其他真实大学，或加入不绑定真实学校的类型模板，例如：
+
+```text
+large_urban_research_university
+small_residential_college
+commuter_city_university
+international_exchange_campus
+```
+
+这使 AI-Uni 可以比较不同大学生态，而不是把一所学校的结构硬编码进整个产品。
 
 ## 人生模拟层
 
@@ -102,19 +177,19 @@ AI-Uni 不把整个游戏做成一次短测验。第一章是 **大学第一周�
 
 ## 内容架构
 
-场景不再维护为一个巨大的硬编码列表，而是使用 Content Pack：
+场景使用 Content Pack：
 
-- `campus-life`：普通校园日常，默认启用。
-- `social-friction`：讨厌的人、失约、插队、室友冲突、小组分工不公等现实摩擦，默认启用。
-- `city-life`：聚餐、KTV、地铁、实习等校外内容，目前已注册，等待地图/传送系统接入。
+- `campus-life`：普通大学日常，默认启用。
+- `social-friction`：失约、插队、同住冲突、小组分工不公等现实摩擦，默认启用。
+- `city-life`：聚餐、KTV、交通、实习等校外内容，目前已注册，等待地图/传送系统接入。
 - `life-course`：毕业、实习、第一份工作、长期关系、家庭照护、退休、生命回顾等长期人生内容，目前作为 planned pack。
 - `sensitive-research`：CAPE/PCL 相关探索性研究内容，默认关闭并要求独立研究方案。
 
-场景现在可以通过 `lifeContext` 限定年龄、人生 season、章节、职业阶段、发展任务和关系类型。普通生活内容也可以明确使用 `researchUse: 'none'`，避免所有剧情都偷偷变成心理测试。
+场景可以通过 `lifeContext` 限定年龄、人生 season、章节、职业阶段、发展任务和关系类型。普通生活内容也可以明确使用 `researchUse: 'none'`，避免所有剧情都偷偷变成心理测试。
 
 详见：
 
-- [`docs/BJTU_CAMPUS_V1.md`](docs/BJTU_CAMPUS_V1.md)
+- [`docs/UNIVERSITY_CORE.md`](docs/UNIVERSITY_CORE.md)
 - [`docs/CONTENT_PACKS.md`](docs/CONTENT_PACKS.md)
 - [`docs/LIFE_COURSE_MODEL.md`](docs/LIFE_COURSE_MODEL.md)
 
@@ -180,19 +255,21 @@ Embedding model 的维度必须与 `convex/util/llm.ts` 中配置一致。
 
 ## 地图与素材
 
-当前第一目标是制作一张小型、可玩的北交大风格像素地图：
+第一张新地图应是一张**原创、通用的大学校园像素地图**：
 
 ```text
-南门
- ↓
-思源教学区 ── 图书馆
- ↓              ↓
-食堂 ── 明湖 ── 学生活动中心
- ↓              ↓
-宿舍 ───────── 体育场
+校园入口
+   ↓
+教学楼 ───── 图书馆
+   ↓            ↓
+校园餐厅 ─ 公共空间 ─ 学生活动中心
+   ↓            ↓
+住宿区 ─────── 运动场地
 ```
 
 地图继续使用 Tiled → JSON → `data/convertMap.js` 的工作流。
+
+后期特定大学模板再单独替换地图和显示名称。
 
 AI-Uni 的 Web base path 为：
 
@@ -206,13 +283,19 @@ AI-Uni 的 Web base path 为：
 /ai-uni/assets/...
 ```
 
+模板资产建议使用：
+
+```text
+/ai-uni/assets/templates/<template-id>/...
+```
+
 ## 目录重点
 
 ```text
 convex/
 ├── aiTown/          # 上游 AI Town 游戏逻辑（继承命名）
 ├── engine/          # 上游 simulation engine
-├── campus/          # 校园配置
+├── campus/          # 通用校园配置 + university profiles/templates
 ├── world/           # 校内外地点注册
 ├── content/         # Content Packs + 校验
 ├── scenarios/       # 场景统一查询入口 + lifeContext 过滤
@@ -222,8 +305,17 @@ convex/
 
 data/
 ├── characters.ts
-├── gentle.js        # 当前 legacy starter map，之后替换 BJTU map
+├── gentle.js        # 当前 legacy starter map，之后替换 generic university map
 └── convertMap.js
+```
+
+`convex/campus/` 当前包括：
+
+```text
+config.ts             通用大学功能地点
+profiles.ts           UniversityProfile 类型与默认通用大学
+registry.ts           模板注册表
+templates/bjtu.ts     可选 BJTU-inspired 模板示例
 ```
 
 `convex/life/` 当前包含：
@@ -238,6 +330,7 @@ schema.ts        持久化表
 state.ts         生命周期状态 API
 theories.ts      理论目录与误用边界
 signals.ts       长期候选行为信号
+influence.ts     有上限的概率影响机制
 ```
 
 ## 安全与研究要求
