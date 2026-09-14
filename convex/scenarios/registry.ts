@@ -2,6 +2,7 @@ import type { ContentPack, ScenarioDefinition } from '../content/types';
 import { campusLifePack } from '../content/packs/campusLife';
 import { socialFrictionPack } from '../content/packs/socialFriction';
 import { cityLifePack } from '../content/packs/cityLife';
+import { lifeCoursePack } from '../content/packs/lifeCourse';
 import { sensitiveResearchPack } from '../content/packs/sensitiveResearch';
 import { assertValidContentPacks, validateContentPacks } from '../content/validation';
 
@@ -9,6 +10,7 @@ export const contentPacks: ContentPack[] = [
   campusLifePack,
   socialFrictionPack,
   cityLifePack,
+  lifeCoursePack,
   sensitiveResearchPack,
 ];
 
@@ -20,7 +22,7 @@ export const contentValidationIssues = validateContentPacks(contentPacks);
 export const allScenarios: ScenarioDefinition[] = contentPacks.flatMap((pack) => pack.scenarios);
 
 // Default runtime pool: ordinary campus content + explicitly enabled behavioral scenarios.
-// Sensitive research and not-yet-mapped city content stay available in the registry but are opt-in.
+// Sensitive research and long-horizon planned content stay available in the registry but are opt-in.
 export const defaultScenarios = allScenarios.filter((scenario) => scenario.enabledByDefault);
 
 // Backward-compatible export used by the first BJTU prototype.
