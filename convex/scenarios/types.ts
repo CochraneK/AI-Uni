@@ -1,21 +1,11 @@
-import type { CampusLocationId } from '../campus/config';
+import type { ConstructId } from '../assessment/constructs';
+import type {
+  ScenarioDefinition,
+  ScenarioSafetyLevel,
+  ResearchUse,
+} from '../content/types';
 
-export type AssessmentTarget =
-  | `big5.${'openness' | 'conscientiousness' | 'extraversion' | 'agreeableness' | 'neuroticism'}`
-  | `cape.${'persecutory_ideation' | 'bizarre_experiences' | 'perceptual_abnormalities'}`
-  | `pcl5_associated.${'intrusion' | 'avoidance' | 'negative_mood_cognition' | 'arousal_reactivity'}`;
-
-export type ScenarioSafetyLevel = 'ordinary' | 'mild_stress' | 'sensitive';
-
-export type CampusScenario = {
-  id: string;
-  title: string;
-  location: CampusLocationId;
-  ordinaryGoal: string;
-  setup: string;
-  npcRoles: string[];
-  hiddenTargets: AssessmentTarget[];
-  safetyLevel: ScenarioSafetyLevel;
-  researchUse: 'behavioral_feature' | 'exploratory_only';
-  observableFeatures: string[];
-};
+// Backward-compatible aliases while scenario code migrates to the content-pack system.
+export type AssessmentTarget = ConstructId;
+export type CampusScenario = ScenarioDefinition;
+export type { ScenarioSafetyLevel, ResearchUse };
