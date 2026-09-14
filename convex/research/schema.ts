@@ -42,20 +42,25 @@ export const researchTables = {
     sessionId: v.id('researchSessions'),
     sceneId: v.optional(v.string()),
     featureKey: v.string(),
+    constructId: v.optional(v.string()),
     value: v.number(),
     computedAt: v.number(),
     modelVersion: v.string(),
     source: v.union(v.literal('rule'), v.literal('llm_rubric'), v.literal('statistical_model')),
   })
     .index('bySession', ['sessionId'])
-    .index('byFeature', ['featureKey']),
+    .index('byFeature', ['featureKey'])
+    .index('byConstruct', ['constructId']),
 
   calibrationMeasures: defineTable({
     sessionId: v.id('researchSessions'),
-    instrument: v.union(v.literal('big5'), v.literal('cape_p15'), v.literal('pcl5')),
+    instrument: v.string(),
     version: v.string(),
+    language: v.optional(v.string()),
+    purpose: v.optional(v.union(v.literal('calibration'), v.literal('criterion'), v.literal('research_only'))),
     completedAt: v.number(),
     rawData: v.any(),
     scoreData: v.optional(v.any()),
+    metadata: v.optional(v.any()),
   }).index('bySessionInstrument', ['sessionId', 'instrument']),
 };
