@@ -342,7 +342,35 @@ export const findConversationCandidate = internalQuery({
   },
   handler: async (ctx, { now, worldId, player, otherFreePlayers }) => {
     const { position } = player;
-    const candidates = [];
+    const prioritizedHumanPlayerIds = new Set<string>();
+
+    // If this NPC has been assigned a role in a player's active life scene,
+    // prefer that human participant over unrelated background conversations.
+    const runtimes = await ctx.db
+      .query('scenarioRuntimeStates')
+      .withIndex('byWorld', (q) => q.eq('worldId', worldId))
+      .collect();
+    for (const runtime of runtimes) {
+      if (!runtime.activeRunId) continue;
+      const run = await ctx.db.get(runtime.activeRunId);
+      if (!run?.npcAssignments?.some((assignment) => assignment.playerId === player.id)) continue;
+
+      const profile = await ctx.db.get(runtime.profileId);
+      if (!profile) continue;
+      const prefix = 'ai-uni:';
+      const token = profile.profileKey.startsWith(prefix)
+        ? profile.profileKey.slice(prefix.length)
+        : undefined;
+      if (!token) continue;
+      const human = otherFreePlayers.find((candidate) => candidate.human === token);
+      if (human) prioritizedHumanPlayerIds.add(human.id);
+    }
+
+    const candidates: Array<{
+      id: GameId<'players'>;
+      position: { x: number; y: number };
+      scenarioPriority: boolean;
+    }> = [];
 
     for (const otherPlayer of otherFreePlayers) {
       // Find the latest conversation we're both members of.
@@ -353,16 +381,25 @@ export const findConversationCandidate = internalQuery({
         )
         .order('desc')
         .first();
-      if (lastMember) {
-        if (now < lastMember.ended + PLAYER_CONVERSATION_COOLDOWN) {
-          continue;
-        }
+      if (lastMember && now < lastMember.ended + PLAYER_CONVERSATION_COOLDOWN) {
+        continue;
       }
-      candidates.push({ id: otherPlayer.id, position });
+      candidates.push({
+        id: otherPlayer.id,
+        position: otherPlayer.position,
+        scenarioPriority: prioritizedHumanPlayerIds.has(otherPlayer.id),
+      });
     }
 
-    // Sort by distance and take the nearest candidate.
-    candidates.sort((a, b) => distance(a.position, position) - distance(b.position, position));
+    // Scenario-assigned humans come first; otherwise use actual distance. The
+    // upstream implementation accidentally stored the current player's own
+    // position for every candidate, which made all distance scores equal.
+    candidates.sort((a, b) => {
+      if (a.scenarioPriority !== b.scenarioPriority) {
+        return a.scenarioPriority ? -1 : 1;
+      }
+      return distance(a.position, position) - distance(b.position, position);
+    });
     return candidates[0]?.id;
   },
 });
