@@ -12,6 +12,7 @@ import { useHistoricalTime } from '../hooks/useHistoricalTime.ts';
 import { DebugTimeManager } from './DebugTimeManager.tsx';
 import { GameId } from '../../convex/aiTown/ids.ts';
 import { useServerGame } from '../hooks/serverGame.ts';
+import { useScenarioRuntime } from '../hooks/useScenarioRuntime.ts';
 
 export const SHOW_DEBUG_UI = !!import.meta.env.VITE_SHOW_DEBUG_UI;
 
@@ -28,6 +29,17 @@ export default function Game() {
   const engineId = worldStatus?.engineId;
 
   const game = useServerGame(worldId);
+  const humanTokenIdentifier =
+    useQuery(api.world.userStatus, worldId ? { worldId } : 'skip') ?? null;
+  const humanPlayerId = game
+    ? [...game.world.players.values()].find((player) => player.human === humanTokenIdentifier)?.id
+    : undefined;
+  const scenarioRuntime = useScenarioRuntime({
+    worldId,
+    game,
+    humanPlayerId,
+    humanTokenIdentifier,
+  });
 
   // Send a periodic heartbeat to our world to keep it alive.
   useWorldHeartbeat();
@@ -59,6 +71,8 @@ https://github.com/michalochman/react-pixi-fiber/issues/145#issuecomment-5315492
                     width={width}
                     height={height}
                     historicalTime={historicalTime}
+                    humanPlayerId={humanPlayerId}
+                    scenarioRuntime={scenarioRuntime}
                     setSelectedElement={setSelectedElement}
                   />
                 </ConvexProvider>
@@ -71,7 +85,10 @@ https://github.com/michalochman/react-pixi-fiber/issues/145#issuecomment-5315492
           className="flex flex-col overflow-y-auto shrink-0 px-4 py-6 sm:px-6 lg:w-96 xl:pr-6 border-t-8 sm:border-t-0 sm:border-l-8 border-brown-900  bg-brown-800 text-brown-100"
           ref={scrollViewRef}
         >
-          <ScenarioStatusPanel worldId={worldId} game={game} />
+          <ScenarioStatusPanel
+            humanPlayerId={humanPlayerId}
+            scenarioRuntime={scenarioRuntime}
+          />
           <PlayerDetails
             worldId={worldId}
             engineId={engineId}
