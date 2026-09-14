@@ -26,6 +26,8 @@ export default function Game() {
   }>();
   const [focusedActivityId, setFocusedActivityId] = useState<string>();
   const [navigationRequest, setNavigationRequest] = useState<CampusNavigationRequest>();
+  const [focusMeRequestId, setFocusMeRequestId] = useState(0);
+  const [showPlayHelp, setShowPlayHelp] = useState(false);
   const [gameWrapperRef, { width, height }] = useElementSize();
 
   const worldStatus = useQuery(api.world.defaultWorldStatus);
@@ -78,6 +80,7 @@ https://github.com/michalochman/react-pixi-fiber/issues/145#issuecomment-5315492
                     humanPlayerId={humanPlayerId}
                     scenarioRuntime={scenarioRuntime}
                     navigationRequest={navigationRequest}
+                    focusMeRequestId={focusMeRequestId}
                     onFocusActivity={setFocusedActivityId}
                     setSelectedElement={setSelectedElement}
                   />
@@ -85,6 +88,32 @@ https://github.com/michalochman/react-pixi-fiber/issues/145#issuecomment-5315492
               </Stage>
             </div>
           </div>
+
+          <div className="pointer-events-auto absolute left-3 top-3 z-20 flex flex-wrap gap-2">
+            <button
+              className="rounded border-2 border-brown-900 bg-brown-100 px-3 py-1.5 text-xs font-bold text-brown-900 shadow disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!humanPlayerId}
+              onClick={() => setFocusMeRequestId((value) => value + 1)}
+            >
+              定位到我
+            </button>
+            <button
+              className="rounded border-2 border-brown-900 bg-brown-100 px-3 py-1.5 text-xs font-bold text-brown-900 shadow"
+              onClick={() => setShowPlayHelp((value) => !value)}
+            >
+              怎么和 NPC 对话？
+            </button>
+          </div>
+
+          {showPlayHelp && (
+            <div className="absolute left-3 top-14 z-20 max-w-xs rounded border-2 border-brown-900 bg-brown-100/95 p-3 text-xs leading-5 text-brown-900 shadow-lg">
+              <div className="font-bold">快速上手</div>
+              <div>① 你的角色头顶有黄色“你”标记，点“定位到我”可重新居中。</div>
+              <div>② 点击地图上的任意 NPC，右侧会出现人物资料。</div>
+              <div>③ 点击“发起对话”，等双方走近后，聊天输入框会出现。</div>
+              <div>④ 点击校园地面可以移动；日程卡里的“前往”也会自动导航。</div>
+            </div>
+          )}
         </div>
         {/* Right column area */}
         <div
