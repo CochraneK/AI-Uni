@@ -9,6 +9,11 @@ import { createEngine } from './aiTown/main';
 import { ENGINE_ACTION_DURATION } from './constants';
 import { detectMismatchedLLMProvider } from './util/llm';
 
+const publicAssetPath = (assetPath: string) => {
+  const [, relativeAssetPath] = assetPath.split('/assets/');
+  return relativeAssetPath ? `/ai-uni/assets/${relativeAssetPath}` : assetPath;
+};
+
 const init = mutation({
   args: {
     numAgents: v.optional(v.number()),
@@ -71,7 +76,7 @@ async function getOrCreateDefaultWorld(ctx: MutationCtx) {
     worldId,
     width: map.mapwidth,
     height: map.mapheight,
-    tileSetUrl: map.tilesetpath,
+    tileSetUrl: publicAssetPath(map.tilesetpath),
     tileSetDimX: map.tilesetpxw,
     tileSetDimY: map.tilesetpxh,
     tileDim: map.tiledim,
