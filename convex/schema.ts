@@ -4,6 +4,7 @@ import { agentTables } from './agent/schema';
 import { aiTownTables } from './aiTown/schema';
 import { conversationId, playerId } from './aiTown/ids';
 import { engineTables } from './engine/schema';
+import { lifeTables } from './life/schema';
 import { researchTables } from './research/schema';
 
 export default defineSchema({
@@ -25,5 +26,6 @@ export default defineSchema({
   ...agentTables,
   ...aiTownTables,
   ...engineTables,
+  ...lifeTables,
   ...researchTables,
 });
