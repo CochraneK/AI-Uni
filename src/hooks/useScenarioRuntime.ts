@@ -24,6 +24,9 @@ export function useScenarioRuntime(args: {
 
   const createLifeProfile = useMutation(api.life.state.createLifeProfile);
   const createScenarioRuntime = useMutation(api.scenarios.runtime.createScenarioRuntime);
+  const ensureFirstWeekCommitments = useMutation(
+    api.life.commitments.ensureFirstWeekCommitments,
+  );
   const enterScenarioLocation = useMutation(api.scenarios.runtime.enterScenarioLocation);
   const leaveScenarioLocation = useMutation(api.scenarios.runtime.leaveScenarioLocation);
 
@@ -67,6 +70,18 @@ export function useScenarioRuntime(args: {
         creatingRuntime.current = false;
       });
   }, [args.worldId, createScenarioRuntime, profile, runtime]);
+
+  const ensuringCommitmentsFor = useRef<string>();
+  useEffect(() => {
+    if (!profile || profile.chapterId !== 'university_first_week') return;
+    const key = `${profile._id}:${profile.chapterUnit}`;
+    if (ensuringCommitmentsFor.current === key) return;
+    ensuringCommitmentsFor.current = key;
+    void ensureFirstWeekCommitments({ profileId: profile._id }).catch((error) => {
+      ensuringCommitmentsFor.current = undefined;
+      console.error('Failed to ensure AI-Uni first-week commitments', error);
+    });
+  }, [ensureFirstWeekCommitments, profile]);
 
   const player =
     args.game && args.humanPlayerId
