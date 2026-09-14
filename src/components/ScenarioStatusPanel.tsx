@@ -25,6 +25,10 @@ export default function ScenarioStatusPanel(props: {
   });
   const completeActiveScenario = useMutation(api.scenarios.runtime.completeActiveScenario);
   const endFirstWeekDay = useMutation(api.life.day.endFirstWeekDay);
+  const firstWeekStatus = useQuery(
+    api.life.day.getFirstWeekStatus,
+    profile?.chapterId === 'university_first_week' ? { profileId: profile._id } : 'skip',
+  );
 
   const baseLocationName = locationId ? worldLocations[locationId]?.name : undefined;
   const locationName =
@@ -52,6 +56,20 @@ export default function ScenarioStatusPanel(props: {
       <div className="mt-2 text-sm text-brown-300">
         当前地点：<span className="text-brown-100">{locationName ?? '校园公共区域'}</span>
       </div>
+
+      {firstWeekStatus && (
+        <div className="mt-3 rounded bg-brown-800/70 px-3 py-2 text-xs leading-5 text-brown-300">
+          <div className="font-semibold text-brown-100">第一周进度</div>
+          <div>
+            已结束 {firstWeekStatus.completedPlayableDays} / {firstWeekStatus.requiredPlayableDays} 天 ·
+            生活事件 {firstWeekStatus.completedCoreEvents} / {firstWeekStatus.minimumCoreEvents} ·
+            不同同学 {firstWeekStatus.distinctNpcInteractions} / {firstWeekStatus.minimumDistinctNpcInteractions}
+          </div>
+          <div>
+            纯日常体验：{firstWeekStatus.ordinaryLifeCompleted ? '已完成' : '还没有'}
+          </div>
+        </div>
+      )}
 
       {activeScenario ? (
         <div className="mt-4">
