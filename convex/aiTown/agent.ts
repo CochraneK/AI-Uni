@@ -367,7 +367,7 @@ export const findConversationCandidate = internalQuery({
     }
 
     const candidates: Array<{
-      id: GameId<'players'>;
+      id: string;
       position: { x: number; y: number };
       scenarioPriority: boolean;
     }> = [];
