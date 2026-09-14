@@ -162,17 +162,6 @@ export const checkInCommitment = mutation({
       return { checkedIn: false, reason: 'wrong_day' as const };
     }
 
-    const runtime = await ctx.db
-      .query('scenarioRuntimeStates')
-      .withIndex('byProfile', (q) => q.eq('profileId', profile._id))
-      .first();
-    if (runtime?.activeScenarioId) {
-      return { checkedIn: false, reason: 'active_scenario' as const };
-    }
-    if (runtime?.activeLocationId !== commitment.locationId) {
-      return { checkedIn: false, reason: 'wrong_location' as const };
-    }
-
     const previousState = profile.state && typeof profile.state === 'object' ? profile.state : {};
     const clock = getDayClock(previousState, makeDayClockKey(profile));
     const temporalState = commitmentTemporalState(commitment, clock.minute);
@@ -186,6 +175,9 @@ export const checkInCommitment = mutation({
       };
     }
 
+    // Once the appointment has ended, attendance is resolved from the schedule
+    // itself; the player does not need to walk back to the original location just
+    // to make the missed/skipped state persistent.
     if (temporalState === 'expired') {
       const status = commitment.attendanceRequired ? 'missed' : 'skipped';
       await ctx.db.patch(commitment._id, { status, resolvedAt: now, updatedAt: now });
@@ -193,6 +185,38 @@ export const checkInCommitment = mutation({
         observedAtMinute: clock.minute,
       });
       return { checkedIn: false, reason: 'too_late' as const, status };
+    }
+
+    const runtime = await ctx.db
+      .query('scenarioRuntimeStates')
+      .withIndex('byProfile', (q) => q.eq('profileId', profile._id))
+      .first();
+    if (!runtime || runtime.activeLocationId !== commitment.locationId) {
+      return { checkedIn: false, reason: 'wrong_location' as const };
+    }
+
+    // Fixed commitments outrank ambient/random scenes. If the player deliberately
+    // checks in for class/meeting/presentation, close the current scene as an
+    // interrupted narrative beat without charging its full authored duration.
+    if (runtime.activeScenarioId) {
+      if (runtime.activeRunId) {
+        await ctx.db.patch(runtime.activeRunId, {
+          endedAt: now,
+          outcome: 'commitment_priority',
+        });
+      }
+      await writeTelemetryForProfile(ctx, profile._id, {
+        eventType: 'scene_exit',
+        action: 'commitment_priority',
+        sceneId: runtime.activeScenarioId,
+        locationId: runtime.activeLocationId,
+        payload: { commitmentKey: commitment.commitmentKey },
+      });
+      await ctx.db.patch(runtime._id, {
+        activeScenarioId: undefined,
+        activeRunId: undefined,
+        updatedAt: now,
+      });
     }
 
     const status = temporalState === 'late_window' ? 'attended_late' : 'attended_on_time';
