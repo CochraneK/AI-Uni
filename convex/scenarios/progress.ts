@@ -7,7 +7,7 @@ const MAX_COMPLETED_SCENARIOS = 256;
 const uniqueAppend = (items: string[], value: string) =>
   items.includes(value) ? items : [...items, value];
 
-const autoCompletionThreshold = (scenario: ReturnType<typeof getScenario>) => {
+export const scenarioAutoCompletionThreshold = (scenario: ReturnType<typeof getScenario>) => {
   if (!scenario) return undefined;
   if (scenario.safetyLevel === 'sensitive') return undefined;
   if (scenario.researchUse === 'none') return 1;
@@ -47,7 +47,7 @@ export const recordScenarioDialogueProgress = async (
   }
 
   const scenario = getScenario(runtime.activeScenarioId);
-  const threshold = autoCompletionThreshold(scenario);
+  const threshold = scenarioAutoCompletionThreshold(scenario);
   const humanMessageCount = (run.humanMessageCount ?? 0) + 1;
   const interactedNpcIds = uniqueAppend(run.interactedNpcIds ?? [], npcId);
 
