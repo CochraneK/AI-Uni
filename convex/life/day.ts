@@ -7,10 +7,14 @@ import {
   recordFirstWeekOrdinaryActivity,
 } from './firstWeekProgress';
 import { campusActivityRules, getCampusActivity } from './activities';
+import {
+  UNIVERSITY_DAY_START_MINUTE,
+  formatGameMinute,
+  getDayClock,
+  makeDayClockKey,
+  spendMinutes,
+} from './dayClock';
 import { writeTelemetryForProfile } from '../research/telemetry';
-
-const activityDayKey = (profile: any) =>
-  `${profile.chapterId}:${profile.chapterUnit}:${profile.totalGameDays}`;
 
 export const getFirstWeekStatus = query({
   args: {
@@ -65,7 +69,19 @@ export const performCampusActivity = mutation({
     }
 
     const previousState = profile.state && typeof profile.state === 'object' ? profile.state : {};
-    const dayKey = activityDayKey(profile);
+    const dayKey = makeDayClockKey(profile);
+    const clock = getDayClock(previousState, dayKey);
+    const nextClock = spendMinutes(clock, activity.estimatedMinutes);
+    if (!nextClock) {
+      return {
+        performed: false,
+        reason: 'not_enough_time' as const,
+        message: `现在已经 ${formatGameMinute(clock.minute)}，今天剩下的时间不够完成这件事。可以结束今天，明天再来。`,
+        gameMinute: clock.minute,
+        gameTime: formatGameMinute(clock.minute),
+      };
+    }
+
     const existingDaily =
       previousState.campusActivities?.dayKey === dayKey
         ? previousState.campusActivities
@@ -94,6 +110,7 @@ export const performCampusActivity = mutation({
     await ctx.db.patch(args.profileId, {
       state: {
         ...previousState,
+        dayClock: nextClock,
         campusActivities: {
           dayKey,
           completedIds: nextCompletedIds,
@@ -118,6 +135,8 @@ export const performCampusActivity = mutation({
         activityId: activity.id,
         locationId: activity.locationId,
         estimatedMinutes: activity.estimatedMinutes,
+        startedAtMinute: clock.minute,
+        endedAtMinute: nextClock.minute,
         tags: activity.tags,
       },
     });
@@ -133,6 +152,8 @@ export const performCampusActivity = mutation({
       payload: {
         activityId: activity.id,
         estimatedMinutes: activity.estimatedMinutes,
+        startedAtMinute: clock.minute,
+        endedAtMinute: nextClock.minute,
       },
     });
 
@@ -144,10 +165,12 @@ export const performCampusActivity = mutation({
     return {
       performed: true,
       reason: 'completed' as const,
-      message: activity.completionText,
+      message: `${activity.completionText} 现在是 ${formatGameMinute(nextClock.minute)}。`,
       activityId: activity.id,
       completedToday: nextCompletedIds.length,
       dailyLimit: campusActivityRules.maxDistinctActivitiesPerDay,
+      gameMinute: nextClock.minute,
+      gameTime: formatGameMinute(nextClock.minute),
       readiness,
     };
   },
@@ -232,11 +255,20 @@ export const endFirstWeekDay = mutation({
 
     const previousState =
       profile.state && typeof profile.state === 'object' ? profile.state : {};
+    const nextDayClockProfile = {
+      chapterId: nextChapterId,
+      chapterUnit: nextChapterUnit,
+      totalGameDays: nextTotalGameDays,
+    };
     const nextState = {
       ...previousState,
       chapterId: nextChapterId,
       chapterUnit: nextChapterUnit,
       totalGameDays: nextTotalGameDays,
+      dayClock: {
+        dayKey: makeDayClockKey(nextDayClockProfile),
+        minute: UNIVERSITY_DAY_START_MINUTE,
+      },
     };
 
     await ctx.db.patch(args.profileId, {
@@ -304,6 +336,8 @@ export const endFirstWeekDay = mutation({
       nextChapterId,
       nextChapterUnit,
       totalGameDays: nextTotalGameDays,
+      gameMinute: UNIVERSITY_DAY_START_MINUTE,
+      gameTime: formatGameMinute(UNIVERSITY_DAY_START_MINUTE),
       readiness,
     };
   },
