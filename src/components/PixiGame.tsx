@@ -6,14 +6,15 @@ import { PixiStaticMap } from './PixiStaticMap.tsx';
 import PixiViewport from './PixiViewport.tsx';
 import { Viewport } from 'pixi-viewport';
 import { Id } from '../../convex/_generated/dataModel';
-import { useQuery } from 'convex/react';
-import { api } from '../../convex/_generated/api.js';
+import type { GameId } from '../../convex/aiTown/ids';
 import { useSendInput } from '../hooks/sendInput.ts';
 import { toastOnError } from '../toasts.ts';
 import { DebugPath } from './DebugPath.tsx';
 import { PositionIndicator } from './PositionIndicator.tsx';
+import CampusActivityHotspots from './CampusActivityHotspots.tsx';
 import { SHOW_DEBUG_UI } from './Game.tsx';
 import { ServerGame } from '../hooks/serverGame.ts';
+import type { ScenarioRuntimeView } from '../hooks/useScenarioRuntime.ts';
 
 export const PixiGame = (props: {
   worldId: Id<'worlds'>;
@@ -22,17 +23,13 @@ export const PixiGame = (props: {
   historicalTime: number | undefined;
   width: number;
   height: number;
+  humanPlayerId?: GameId<'players'>;
+  scenarioRuntime: ScenarioRuntimeView;
   setSelectedElement: SelectElement;
 }) => {
   // PIXI setup.
   const pixiApp = useApp();
   const viewportRef = useRef<Viewport | undefined>();
-
-  const humanTokenIdentifier = useQuery(api.world.userStatus, { worldId: props.worldId }) ?? null;
-  const humanPlayerId = [...props.game.world.players.values()].find(
-    (p) => p.human === humanTokenIdentifier,
-  )?.id;
-
   const moveTo = useSendInput(props.engineId, 'moveTo');
 
   // Interaction for clicking on the world to navigate.
@@ -47,6 +44,16 @@ export const PixiGame = (props: {
     y: number;
     t: number;
   } | null>(null);
+
+  const navigateTo = async (destination: { x: number; y: number }) => {
+    if (!props.humanPlayerId) return;
+    setLastDestination({ t: Date.now(), ...destination });
+    console.log(`Moving to ${JSON.stringify(destination)}`);
+    await toastOnError(
+      moveTo({ playerId: props.humanPlayerId, destination }),
+    );
+  };
+
   const onMapPointerUp = async (e: any) => {
     if (dragStart.current) {
       const { screenX, screenY } = dragStart.current;
@@ -58,40 +65,35 @@ export const PixiGame = (props: {
         return;
       }
     }
-    if (!humanPlayerId) {
-      return;
-    }
+    if (!props.humanPlayerId) return;
     const viewport = viewportRef.current;
-    if (!viewport) {
-      return;
-    }
+    if (!viewport) return;
+
     const gameSpacePx = viewport.toWorld(e.screenX, e.screenY);
     const tileDim = props.game.worldMap.tileDim;
-    const gameSpaceTiles = {
-      x: gameSpacePx.x / tileDim,
-      y: gameSpacePx.y / tileDim,
-    };
-    setLastDestination({ t: Date.now(), ...gameSpaceTiles });
     const roundedTiles = {
-      x: Math.floor(gameSpaceTiles.x),
-      y: Math.floor(gameSpaceTiles.y),
+      x: Math.floor(gameSpacePx.x / tileDim),
+      y: Math.floor(gameSpacePx.y / tileDim),
     };
-    console.log(`Moving to ${JSON.stringify(roundedTiles)}`);
-    await toastOnError(moveTo({ playerId: humanPlayerId, destination: roundedTiles }));
+    await navigateTo(roundedTiles);
   };
+
   const { width, height, tileDim } = props.game.worldMap;
   const players = [...props.game.world.players.values()];
+  const isGenericCampus = props.game.worldMap.tileSetUrl.includes('generic-campus-v1.png');
+  const showActivityHotspots =
+    Boolean(props.humanPlayerId) && isGenericCampus && !props.scenarioRuntime.activeScenario;
 
-  // Zoom on the user’s avatar when it is created
+  // Zoom on the user’s avatar when it is created.
   useEffect(() => {
-    if (!viewportRef.current || humanPlayerId === undefined) return;
+    if (!viewportRef.current || props.humanPlayerId === undefined) return;
 
-    const humanPlayer = props.game.world.players.get(humanPlayerId)!;
+    const humanPlayer = props.game.world.players.get(props.humanPlayerId)!;
     viewportRef.current.animate({
       position: new PIXI.Point(humanPlayer.position.x * tileDim, humanPlayer.position.y * tileDim),
       scale: 1.5,
     });
-  }, [humanPlayerId]);
+  }, [props.humanPlayerId]);
 
   return (
     <PixiViewport
@@ -107,10 +109,18 @@ export const PixiGame = (props: {
         onpointerup={onMapPointerUp}
         onpointerdown={onMapPointerDown}
       />
+      {showActivityHotspots && (
+        <CampusActivityHotspots
+          tileDim={tileDim}
+          onNavigate={(_locationId, destination) => {
+            void navigateTo(destination);
+          }}
+        />
+      )}
       {players.map(
         (p) =>
           // Only show the path for the human player in non-debug mode.
-          (SHOW_DEBUG_UI || p.id === humanPlayerId) && (
+          (SHOW_DEBUG_UI || p.id === props.humanPlayerId) && (
             <DebugPath key={`path-${p.id}`} player={p} tileDim={tileDim} />
           ),
       )}
@@ -120,7 +130,7 @@ export const PixiGame = (props: {
           key={`player-${p.id}`}
           game={props.game}
           player={p}
-          isViewer={p.id === humanPlayerId}
+          isViewer={p.id === props.humanPlayerId}
           onClick={props.setSelectedElement}
           historicalTime={props.historicalTime}
         />
