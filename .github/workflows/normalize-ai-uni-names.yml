@@ -1,0 +1,63 @@
+name: Normalize AI-Uni names
+
+on:
+  push:
+    branches:
+      - feat/bjtu-campus-v1
+    paths:
+      - .github/workflows/normalize-ai-uni-names.yml
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/bjtu-campus-v1
+
+      - name: Normalize safe legacy product strings
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          replacements = {
+              '/ai-town/assets/': '/ai-uni/assets/',
+              'https://github.com/CochraneK/ai-town': 'https://github.com/CochraneK/ai-uni',
+              'AI-Uni Campus': 'AI-Uni',
+              'AI Town · BJTU Campus': 'AI-Uni',
+          }
+          skip_dirs = {'.git', 'node_modules', 'dist'}
+          for path in Path('.').rglob('*'):
+              if not path.is_file() or any(part in skip_dirs for part in path.parts):
+                  continue
+              try:
+                  text = path.read_text(encoding='utf-8')
+              except (UnicodeDecodeError, OSError):
+                  continue
+              new = text
+              for old, replacement in replacements.items():
+                  new = new.replace(old, replacement)
+              if new != text:
+                  path.write_text(new, encoding='utf-8')
+                  print(f'normalized {path}')
+          PY
+
+          echo 'Remaining product-level legacy matches:'
+          git grep -n -E '(/ai-town/assets/|CochraneK/ai-town|AI-Uni Campus|AI Town · BJTU Campus)' || true
+
+      - name: Commit normalization
+        run: |
+          if git diff --quiet; then
+            echo "No legacy product strings needed changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: finish AI-Uni naming normalization [skip ci]"
+          git push origin HEAD:feat/bjtu-campus-v1
