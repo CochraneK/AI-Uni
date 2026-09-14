@@ -1,31 +1,22 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import type { Id } from '../../convex/_generated/dataModel';
-import type { ServerGame } from '../hooks/serverGame';
+import type { GameId } from '../../convex/aiTown/ids';
 import { resolveCampusDisplayName } from '../../convex/campus/registry';
 import { worldLocations } from '../../convex/world/locations';
 import { campusActivityRules, getCampusActivities } from '../../convex/life/activities';
-import { useScenarioRuntime } from '../hooks/useScenarioRuntime';
+import type { ScenarioRuntimeView } from '../hooks/useScenarioRuntime';
 
 export default function ScenarioStatusPanel(props: {
-  worldId: Id<'worlds'>;
-  game: ServerGame;
+  humanPlayerId?: GameId<'players'>;
+  scenarioRuntime: ScenarioRuntimeView;
 }) {
   const [dayEndMessage, setDayEndMessage] = useState<string>();
   const [activityMessage, setActivityMessage] = useState<string>();
   const [runningActivityId, setRunningActivityId] = useState<string>();
-  const humanTokenIdentifier = useQuery(api.world.userStatus, { worldId: props.worldId }) ?? null;
-  const humanPlayerId = [...props.game.world.players.values()].find(
-    (player) => player.human === humanTokenIdentifier,
-  )?.id;
+  const { runtime, locationId, activeScenario, universityProfile, profile } =
+    props.scenarioRuntime;
 
-  const { runtime, locationId, activeScenario, universityProfile, profile } = useScenarioRuntime({
-    worldId: props.worldId,
-    game: props.game,
-    humanPlayerId,
-    humanTokenIdentifier,
-  });
   const completeActiveScenario = useMutation(api.scenarios.runtime.completeActiveScenario);
   const performCampusActivity = useMutation(api.life.day.performCampusActivity);
   const endFirstWeekDay = useMutation(api.life.day.endFirstWeekDay);
@@ -55,7 +46,7 @@ export default function ScenarioStatusPanel(props: {
   const reachedActivityLimit =
     completedActivityIds.length >= campusActivityRules.maxDistinctActivitiesPerDay;
 
-  if (!humanPlayerId) {
+  if (!props.humanPlayerId) {
     return null;
   }
 
