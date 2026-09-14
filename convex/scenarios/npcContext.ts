@@ -27,9 +27,10 @@ const stableIndex = (input: string, length: number) => {
 export const buildScenarioNpcContext = (
   scenario: ScenarioDefinition,
   npcPlayerId: string,
+  assignedRole?: string,
 ): ScenarioNpcContext => {
   const roles = scenario.npcRoles.length > 0 ? scenario.npcRoles : ['participant'];
-  const role = roles[stableIndex(`${scenario.id}|${npcPlayerId}`, roles.length)];
+  const role = assignedRole ?? roles[stableIndex(`${scenario.id}|${npcPlayerId}`, roles.length)];
 
   return {
     scenarioId: scenario.id,
