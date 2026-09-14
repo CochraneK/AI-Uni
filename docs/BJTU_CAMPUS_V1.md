@@ -8,9 +8,11 @@ The player should feel that they are living ordinary university life. Psychologi
 
 Target composition for a session:
 
-- ~70% ordinary campus life
-- ~20% assessment-sensitive but still plausible campus events
-- ~10% explicit calibration / questionnaire steps
+- ~60–70% ordinary life, fun and exploration
+- ~20–30% naturally informative social / decision / stress situations
+- ~5–10% explicit calibration or questionnaire steps
+
+The campus is the first hub, not the long-term boundary. The architecture now supports off-campus dining, KTV/parties, transit, internships, travel and future online/social-media scenes without redesigning the scenario model.
 
 ## First playable map
 
@@ -75,16 +77,46 @@ assets/bjtu/
 
 Before publishing, verify permission for any official logos, photos, seals, signage or other protected brand assets. Prefer original pixel-art interpretations rather than copying photographs directly.
 
+## Content-pack architecture
+
+Scenarios are no longer maintained as one monolithic list.
+
+```text
+convex/content/
+├── packs/
+│   ├── campusLife.ts
+│   ├── socialFriction.ts
+│   ├── cityLife.ts
+│   └── sensitiveResearch.ts
+├── types.ts
+└── validation.ts
+```
+
+Current packs:
+
+- `campus-life`: classes, clubs, study, schedule changes and other baseline life content.
+- `social-friction`: roommate conflict, unfair group work, exclusion, annoying behavior and broken promises.
+- `city-life`: dining, KTV, transit and internship examples; registered now but disabled until map/transition support exists.
+- `sensitive-research`: CAPE/PCL-associated exploratory scenes; opt-in only and disabled by default.
+
+`convex/world/locations.ts` aggregates campus and future off-campus locations. Off-campus locations currently use `mapStatus: 'planned'`, which means content can be authored before the next map exists.
+
+See `docs/CONTENT_PACKS.md` for the extension guide.
+
 ## Research architecture
 
 ```text
-AI Town engine
-  -> campus/config.ts          ordinary locations and schedule
-  -> scenarios/registry.ts     controlled campus events
-  -> research/events.ts        raw telemetry
-  -> behavioralFeatures        derived behavior features
-  -> calibrationMeasures       independent questionnaires
-  -> analysis outside gameplay
+ordinary scenario
+      ↓
+raw telemetry
+      ↓
+derived behavioral feature
+      ↓
+construct registry
+      ↓
+independent assessment / criterion measure
+      ↓
+validation analysis
 ```
 
 Raw events should include more than button choices. Capture, where appropriate and consented:
@@ -101,6 +133,39 @@ Raw events should include more than button choices. Capture, where appropriate a
 
 Do not collect data merely because it is technically available. The study protocol should define a data-minimization list before deployment.
 
+## Construct registry
+
+Research targets live in `convex/assessment/constructs.ts`, separate from scenarios.
+
+Current namespaces include:
+
+```text
+big5.*
+cape.*
+pcl5_associated.*
+social.*
+coping.*
+emotion.*
+attachment.*
+decision.*
+```
+
+The newer namespaces are expansion points, not claims that the current game already validly measures those constructs.
+
+## Adding more tests
+
+Questionnaires/tests are separately registered in `convex/assessment/measures.ts`.
+
+This means adding another measure does not require editing the Convex schema:
+
+1. register the measure and which constructs it is intended to calibrate;
+2. document version, language, licensing/authorization and validation status;
+3. implement questionnaire delivery separately from game scenes;
+4. save results with a stable `instrument` id + version;
+5. preregister how game features will be compared with the independent measure.
+
+Questionnaire item wording should not be hidden inside NPC prompts or scenario files.
+
 ## Measurement boundaries
 
 ### Big Five
@@ -115,17 +180,35 @@ Use ambiguous-but-plausible social or perceptual situations only as exploratory 
 
 PCL-5 refers to symptoms in relation to real traumatic exposure. A startle or avoidance response inside the game is not a PCL-5 item. Game behavior may only be studied as an exploratory correlate and must be calibrated separately against a proper PCL-5 administration when appropriate under the study protocol.
 
+## Automatic content validation
+
+`convex/content/validation.ts` checks key invariants as content grows:
+
+- duplicate content-pack IDs;
+- duplicate scenario IDs;
+- unknown locations;
+- unknown constructs;
+- sensitive scenarios accidentally enabled by default;
+- CAPE/PCL-associated scenes not marked `exploratory_only`;
+- scenarios with no observable features.
+
+The scenario registry fails fast on invalid content configuration.
+
 ## Safety and consent
 
 Participants may be blinded to the exact construct attached to each scene, but they should not be deceived about the fact that choices, movement and conversations are being recorded for behavioral / psychological research.
 
 Sensitive scenes should be skippable. The application must not present diagnosis, treatment advice or crisis conclusions from these experimental signals.
 
+Free-text dialogue needs a study-specific retention/de-identification policy before real participant deployment.
+
 ## Next implementation milestones
 
 1. Produce the small BJTU-inspired Tiled map and tileset.
 2. Add zone triggers to connect map locations to scenario IDs.
 3. Wire `research.startSession` / `logEvent` into player movement and dialogue.
-4. Add a deterministic scenario controller before allowing LLM-generated variations.
-5. Build a researcher-only export / dashboard.
-6. Add validated calibration instruments only after licensing/language/ethics review.
+4. Add a deterministic scenario controller selecting from enabled content packs.
+5. Add NPC role assignment and controlled LLM prompts.
+6. Add participant consent/session UI.
+7. Add independent questionnaire/calibration UI.
+8. Build a researcher-only export / dashboard.
