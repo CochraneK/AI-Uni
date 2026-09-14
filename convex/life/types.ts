@@ -195,6 +195,7 @@ export type LifeChapterDefinition = {
 };
 
 export type LifeProfileSnapshot = {
+  universityProfileId: string;
   age: number;
   season: LifeSeasonId;
   lifeStage: LifeStageId;
