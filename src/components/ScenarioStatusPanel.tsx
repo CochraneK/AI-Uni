@@ -5,6 +5,13 @@ import type { GameId } from '../../convex/aiTown/ids';
 import { resolveCampusDisplayName } from '../../convex/campus/registry';
 import { worldLocations } from '../../convex/world/locations';
 import { campusActivityRules, getCampusActivities } from '../../convex/life/activities';
+import {
+  canSpendMinutes,
+  formatGameMinute,
+  getDayClock,
+  makeDayClockKey,
+  minutesRemainingInDay,
+} from '../../convex/life/dayClock';
 import type { ScenarioRuntimeView } from '../hooks/useScenarioRuntime';
 
 export default function ScenarioStatusPanel(props: {
@@ -33,11 +40,10 @@ export default function ScenarioStatusPanel(props: {
   const isFirstWeek = profile?.chapterId === 'university_first_week';
   const isFinalFirstWeekDay = isFirstWeek && profile?.chapterUnit === 7;
   const activities = !activeScenario && locationId ? getCampusActivities(locationId) : [];
-  const currentActivityDayKey = profile
-    ? `${profile.chapterId}:${profile.chapterUnit}:${profile.totalGameDays}`
-    : undefined;
+  const currentDayKey = profile ? makeDayClockKey(profile) : undefined;
+  const dayClock = profile && currentDayKey ? getDayClock(profile.state, currentDayKey) : undefined;
   const activityState =
-    profile?.state?.campusActivities?.dayKey === currentActivityDayKey
+    profile?.state?.campusActivities?.dayKey === currentDayKey
       ? profile?.state?.campusActivities
       : undefined;
   const completedActivityIds: string[] = Array.isArray(activityState?.completedIds)
@@ -57,12 +63,20 @@ export default function ScenarioStatusPanel(props: {
         {profile && (
           <span className="text-xs text-brown-300">
             {isFirstWeek ? `第 ${profile.chapterUnit} / 7 日` : `阶段 ${profile.chapterUnit}`}
+            {dayClock ? ` · ${formatGameMinute(dayClock.minute)}` : ''}
           </span>
         )}
       </div>
 
-      <div className="mt-2 text-sm text-brown-300">
-        当前地点：<span className="text-brown-100">{locationName ?? '校园公共区域'}</span>
+      <div className="mt-2 flex items-center justify-between gap-3 text-sm text-brown-300">
+        <span>
+          当前地点：<span className="text-brown-100">{locationName ?? '校园公共区域'}</span>
+        </span>
+        {dayClock && (
+          <span className="text-xs text-brown-400">
+            今日剩余 {Math.floor(minutesRemainingInDay(dayClock) / 60)}h {minutesRemainingInDay(dayClock) % 60}m
+          </span>
+        )}
       </div>
 
       {firstWeekStatus && (
@@ -117,8 +131,14 @@ export default function ScenarioStatusPanel(props: {
               <div className="mt-2 grid gap-2">
                 {activities.map((activity) => {
                   const completed = completedActivityIds.includes(activity.id);
+                  const fitsToday = dayClock
+                    ? canSpendMinutes(dayClock, activity.estimatedMinutes)
+                    : true;
                   const disabled =
-                    completed || reachedActivityLimit || runningActivityId !== undefined;
+                    completed ||
+                    !fitsToday ||
+                    reachedActivityLimit ||
+                    runningActivityId !== undefined;
                   return (
                     <button
                       key={activity.id}
@@ -142,7 +162,11 @@ export default function ScenarioStatusPanel(props: {
                       <div className="flex items-center justify-between gap-3 text-sm font-semibold text-brown-100">
                         <span>{activity.title}</span>
                         <span className="text-xs font-normal text-brown-400">
-                          {completed ? '今天做过' : `约 ${activity.estimatedMinutes} 分钟`}
+                          {completed
+                            ? '今天做过'
+                            : fitsToday
+                              ? `约 ${activity.estimatedMinutes} 分钟`
+                              : '今天来不及'}
                         </span>
                       </div>
                       <div className="mt-1 text-xs leading-5 text-brown-400">
