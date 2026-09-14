@@ -6,9 +6,8 @@ import { data as f5SpritesheetData } from './spritesheets/f5';
 import { data as f6SpritesheetData } from './spritesheets/f6';
 import { data as f7SpritesheetData } from './spritesheets/f7';
 import { data as f8SpritesheetData } from './spritesheets/f8';
-import { npcProfiles } from './npcProfiles';
 
-export { npcProfiles as Descriptions } from './npcProfiles';
+export { npcProfiles as Descriptions, npcRoleTagsForName } from './npcProfiles';
 
 export const characters = [
   {
@@ -60,10 +59,6 @@ export const characters = [
     speed: 0.1,
   },
 ];
-
-// Keep the semantic profiles reachable from the original module for upstream
-// initialization code that imports Descriptions from data/characters.
-void npcProfiles;
 
 // Characters move at 0.75 tiles per second.
 export const movementSpeed = 0.75;
