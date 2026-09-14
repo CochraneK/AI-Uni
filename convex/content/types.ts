@@ -23,6 +23,15 @@ export type ScenarioLifeContext = {
   maximumAge?: number;
 };
 
+export type ScenarioTimeWindow = {
+  /** Inclusive authored start in local game-clock HH:MM form. */
+  start: string;
+  /** Latest allowed completion time in local game-clock HH:MM form. */
+  end: string;
+  /** Optional player-facing/editorial note such as breakfast or evening. */
+  label?: string;
+};
+
 export type ScenarioDefinition = {
   id: string;
   title: string;
@@ -36,6 +45,11 @@ export type ScenarioDefinition = {
    * safetyLevel, researchUse or hidden psychological targets.
    */
   estimatedMinutes: number;
+  /**
+   * Optional ordinary-life clock windows. A new scene may start only when its
+   * full estimated duration can finish inside at least one window.
+   */
+  timeWindows?: ScenarioTimeWindow[];
   npcRoles: string[];
   hiddenTargets: ConstructId[];
   safetyLevel: ScenarioSafetyLevel;
