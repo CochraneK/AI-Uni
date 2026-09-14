@@ -1,6 +1,11 @@
 import { v } from 'convex/values';
 import { mutation } from '../_generated/server';
 import { firstWeekEndCondition, universityFirstWeek } from './firstWeek';
+import {
+  evaluateFirstWeekReadiness,
+  markFirstWeekDayCompleted,
+} from './firstWeekProgress';
+import { writeTelemetryForProfile } from '../research/telemetry';
 
 export const endFirstWeekDay = mutation({
   args: {
@@ -16,10 +21,32 @@ export const endFirstWeekDay = mutation({
       throw new Error(`Invalid first-week day: ${profile.chapterUnit}`);
     }
 
-    const now = Date.now();
     const completedDay = profile.chapterUnit;
     const dayDefinition = universityFirstWeek[completedDay - 1];
-    const firstWeekCompleted = completedDay >= firstWeekEndCondition.requiredPlayableDays;
+    const isFinalDay = completedDay >= firstWeekEndCondition.requiredPlayableDays;
+
+    // Day 7 is a real chapter gate, not a cosmetic button. The current day is
+    // counted prospectively, but it is only persisted as completed if every
+    // gameplay requirement is satisfied.
+    if (isFinalDay) {
+      const readiness = await evaluateFirstWeekReadiness(ctx, args.profileId, completedDay);
+      if (!readiness.ready) {
+        return {
+          advanced: false,
+          completedDay,
+          dayTitle: dayDefinition.title,
+          closingBeat: '第一周还没有结束。再在校园里生活一会儿，把缺少的经历补齐。',
+          firstWeekCompleted: false,
+          nextChapterId: profile.chapterId,
+          nextChapterUnit: profile.chapterUnit,
+          totalGameDays: profile.totalGameDays,
+          readiness,
+        };
+      }
+    }
+
+    const now = Date.now();
+    const firstWeekCompleted = isFinalDay;
     const nextChapterId = firstWeekCompleted
       ? firstWeekEndCondition.nextChapterId
       : profile.chapterId;
@@ -38,6 +65,12 @@ export const endFirstWeekDay = mutation({
         endedAt: now,
         outcome: 'day_ended',
       });
+      await writeTelemetryForProfile(ctx, args.profileId, {
+        eventType: 'scene_exit',
+        action: 'day_ended',
+        sceneId: runtime.activeScenarioId,
+        locationId: runtime.activeLocationId,
+      });
     }
     if (runtime) {
       await ctx.db.patch(runtime._id, {
@@ -48,6 +81,8 @@ export const endFirstWeekDay = mutation({
         updatedAt: now,
       });
     }
+
+    await markFirstWeekDayCompleted(ctx, args.profileId, completedDay);
 
     const previousState =
       profile.state && typeof profile.state === 'object' ? profile.state : {};
@@ -99,11 +134,23 @@ export const endFirstWeekDay = mutation({
           fromChapterId: 'university_first_week',
           toChapterId: nextChapterId,
           requiredPlayableDays: firstWeekEndCondition.requiredPlayableDays,
+          minimumCoreEvents: firstWeekEndCondition.minimumCoreEvents,
+          minimumDistinctNpcInteractions: firstWeekEndCondition.minimumDistinctNpcInteractions,
+          requireOrdinaryLifeCompletion: firstWeekEndCondition.requireOrdinaryLifeCompletion,
         },
       });
     }
 
+    await writeTelemetryForProfile(ctx, args.profileId, {
+      eventType: 'system',
+      action: firstWeekCompleted ? 'first_week_completed' : 'first_week_day_completed',
+      gameDay: completedDay,
+      payload: { nextChapterId, nextChapterUnit },
+    });
+
+    const readiness = await evaluateFirstWeekReadiness(ctx, args.profileId);
     return {
+      advanced: true,
       completedDay,
       dayTitle: dayDefinition.title,
       closingBeat: dayDefinition.closingBeat,
@@ -111,6 +158,7 @@ export const endFirstWeekDay = mutation({
       nextChapterId,
       nextChapterUnit,
       totalGameDays: nextTotalGameDays,
+      readiness,
     };
   },
 });
