@@ -7,6 +7,9 @@ export const scenarioTables = {
     profileId: v.id('lifeProfiles'),
     worldId: v.optional(v.id('worlds')),
     activeLocationId: v.optional(v.string()),
+    // Retained across unzoned corridors so a later semantic-zone entry can
+    // charge one campus travel block without frame-by-frame movement logging.
+    lastKnownLocationId: v.optional(v.string()),
     activeScenarioId: v.optional(v.string()),
     activeRunId: v.optional(v.id('scenarioRuns')),
     locationEnteredAt: v.optional(v.number()),
