@@ -6,6 +6,8 @@ import type { WorldLocationId } from '../world/locations';
 import { worldLocations } from '../world/locations';
 import { getUniversityProfile } from '../campus/registry';
 import { npcRoleTagsForName } from '../../data/npcProfiles';
+import { recordFirstWeekScenarioCompletion } from '../life/firstWeekProgress';
+import { writeTelemetryForProfile } from '../research/telemetry';
 import { contentPacks, getScenario } from './registry';
 import { buildScenarioCandidates, selectScenario } from './controller';
 
@@ -245,10 +247,25 @@ export const enterScenarioLocation = mutation({
         endedAt: now,
         outcome: 'location_changed',
       });
+      await writeTelemetryForProfile(ctx, runtime.profileId, {
+        eventType: 'scene_exit',
+        action: 'location_changed',
+        sceneId: runtime.activeScenarioId,
+        locationId: runtime.activeLocationId,
+      });
     }
 
     const profile = await ctx.db.get(runtime.profileId);
     if (!profile) throw new Error('Life profile not found');
+
+    await writeTelemetryForProfile(ctx, runtime.profileId, {
+      eventType: 'movement',
+      action: 'location_enter',
+      locationId,
+      payload: runtime.activeLocationId
+        ? { fromLocationId: runtime.activeLocationId }
+        : undefined,
+    });
 
     const taskStates = await ctx.db
       .query('developmentalTaskStates')
@@ -328,6 +345,14 @@ export const enterScenarioLocation = mutation({
       updatedAt: now,
     });
 
+    await writeTelemetryForProfile(ctx, runtime.profileId, {
+      eventType: 'scene_enter',
+      action: 'scenario_started',
+      sceneId: selected.scenario.id,
+      locationId,
+      payload: { assignedNpcCount: npcAssignments.length },
+    });
+
     return { locationId, scenario: selected.scenario, npcAssignments, changed: true };
   },
 });
@@ -343,24 +368,39 @@ export const completeActiveScenario = mutation({
     if (!runtime.activeScenarioId) return null;
 
     const now = Date.now();
+    const completedScenarioId = runtime.activeScenarioId;
+    const scenario = getScenario(completedScenarioId);
+    const outcome = args.outcome ?? 'completed';
     if (runtime.activeRunId) {
       await ctx.db.patch(runtime.activeRunId, {
         endedAt: now,
-        outcome: args.outcome ?? 'completed',
+        outcome,
       });
     }
 
     const completedScenarioIds = uniqueCompleted(
       runtime.completedScenarioIds,
-      runtime.activeScenarioId,
+      completedScenarioId,
     );
-    const completedScenarioId = runtime.activeScenarioId;
 
     await ctx.db.patch(args.runtimeId, {
       activeScenarioId: undefined,
       activeRunId: undefined,
       completedScenarioIds,
       updatedAt: now,
+    });
+
+    await recordFirstWeekScenarioCompletion(
+      ctx,
+      runtime.profileId,
+      completedScenarioId,
+      scenario?.researchUse === 'none',
+    );
+    await writeTelemetryForProfile(ctx, runtime.profileId, {
+      eventType: 'scene_exit',
+      action: outcome,
+      sceneId: completedScenarioId,
+      locationId: runtime.activeLocationId,
     });
 
     return completedScenarioId;
@@ -378,6 +418,12 @@ export const leaveScenarioLocation = mutation({
       await ctx.db.patch(runtime.activeRunId, {
         endedAt: now,
         outcome: 'left_location',
+      });
+      await writeTelemetryForProfile(ctx, runtime.profileId, {
+        eventType: 'scene_exit',
+        action: 'left_location',
+        sceneId: runtime.activeScenarioId,
+        locationId: runtime.activeLocationId,
       });
     }
 
