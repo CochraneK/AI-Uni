@@ -3,6 +3,7 @@ import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import type { GameId } from '../../convex/aiTown/ids';
 import { resolveCampusDisplayName } from '../../convex/campus/registry';
+import { getUniversityScheduleMoment } from '../../convex/campus/schedule';
 import { worldLocations } from '../../convex/world/locations';
 import { campusActivityRules, getCampusActivities } from '../../convex/life/activities';
 import {
@@ -44,6 +45,25 @@ export default function ScenarioStatusPanel(props: {
   const activities = !activeScenario && locationId ? getCampusActivities(locationId) : [];
   const currentDayKey = profile ? makeDayClockKey(profile) : undefined;
   const dayClock = profile && currentDayKey ? getDayClock(profile.state, currentDayKey) : undefined;
+  const scheduleMoment = dayClock ? getUniversityScheduleMoment(dayClock.minute) : undefined;
+  const scheduleLocationName = scheduleMoment?.current
+    ? universityProfile
+      ? resolveCampusDisplayName(
+          universityProfile,
+          scheduleMoment.current.location,
+          worldLocations[scheduleMoment.current.location]?.name ?? scheduleMoment.current.location,
+        )
+      : worldLocations[scheduleMoment.current.location]?.name
+    : undefined;
+  const nextScheduleLocationName = scheduleMoment?.next
+    ? universityProfile
+      ? resolveCampusDisplayName(
+          universityProfile,
+          scheduleMoment.next.location,
+          worldLocations[scheduleMoment.next.location]?.name ?? scheduleMoment.next.location,
+        )
+      : worldLocations[scheduleMoment.next.location]?.name
+    : undefined;
   const activityState =
     profile?.state?.campusActivities?.dayKey === currentDayKey
       ? profile?.state?.campusActivities
@@ -88,6 +108,25 @@ export default function ScenarioStatusPanel(props: {
           </span>
         )}
       </div>
+
+      {scheduleMoment?.current && (
+        <div className="mt-3 rounded border border-brown-700 bg-brown-800/50 px-3 py-2 text-xs leading-5 text-brown-300">
+          <div className="font-semibold text-brown-100">参考日程 · 不强制</div>
+          <div>
+            现在通常是：{scheduleMoment.current.activity}
+            {scheduleLocationName ? ` · ${scheduleLocationName}` : ''}
+          </div>
+          {scheduleMoment.next ? (
+            <div>
+              下一项：{scheduleMoment.next.time} {scheduleMoment.next.activity}
+              {nextScheduleLocationName ? ` · ${nextScheduleLocationName}` : ''}
+            </div>
+          ) : (
+            <div>今天已经进入最后一段住宿区生活时间。</div>
+          )}
+          <div className="text-brown-400">这只是校园生活节奏提示，你仍可以自由安排今天。</div>
+        </div>
+      )}
 
       {firstWeekStatus && (
         <div className="mt-3 rounded bg-brown-800/70 px-3 py-2 text-xs leading-5 text-brown-300">
