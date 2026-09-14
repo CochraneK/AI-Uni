@@ -33,7 +33,7 @@ export default function Home() {
         <div className="font-body">
           <h1 className="text-center text-6xl font-bold font-display game-title">校园生活实验</h1>
           <p>
-            欢迎来到 AI-Uni Campus。这是一个以北京高校日常生活为背景、正在逐步改造成北交大校园风格的 AI Town
+            欢迎来到 AI Town · BJTU Campus。这是一个以大学日常生活为主体、正在逐步改造成北交大校园风格的 AI Town
             研究原型。你可以观察 NPC，也可以进入世界与他们聊天、上课、做小组作业和参加校园活动。
           </p>
           <h2 className="text-4xl mt-4">怎么玩</h2>
@@ -61,7 +61,7 @@ export default function Home() {
 
       <div className="w-full lg:h-screen min-h-screen relative isolate overflow-hidden lg:p-8 shadow-2xl flex flex-col justify-start">
         <h1 className="mx-auto text-4xl p-3 sm:text-8xl lg:text-9xl font-bold font-display leading-none tracking-wide game-title w-full text-left sm:text-center sm:w-auto">
-          AI-Uni Campus
+          AI Town · BJTU Campus
         </h1>
 
         <div className="max-w-xs md:max-w-xl lg:max-w-none mx-auto my-4 text-center text-base sm:text-xl md:text-2xl text-white leading-tight shadow-solid">
