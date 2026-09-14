@@ -35,8 +35,10 @@ import type * as engine_abstractGame from "../engine/abstractGame.js";
 import type * as engine_historicalObject from "../engine/historicalObject.js";
 import type * as http from "../http.js";
 import type * as init from "../init.js";
+import type * as life_state from "../life/state.js";
 import type * as messages from "../messages.js";
 import type * as music from "../music.js";
+import type * as scenarios_runtime from "../scenarios/runtime.js";
 import type * as testing from "../testing.js";
 import type * as util_FastIntegerCompression from "../util/FastIntegerCompression.js";
 import type * as util_assertNever from "../util/assertNever.js";
@@ -51,6 +53,7 @@ import type * as util_sleep from "../util/sleep.js";
 import type * as util_types from "../util/types.js";
 import type * as util_xxhash from "../util/xxhash.js";
 import type * as world from "../world.js";
+import type * as world_runtime from "../world/runtime.js";
 
 import type {
   ApiFromModules,
@@ -86,8 +89,10 @@ declare const fullApi: ApiFromModules<{
   "engine/historicalObject": typeof engine_historicalObject;
   http: typeof http;
   init: typeof init;
+  "life/state": typeof life_state;
   messages: typeof messages;
   music: typeof music;
+  "scenarios/runtime": typeof scenarios_runtime;
   testing: typeof testing;
   "util/FastIntegerCompression": typeof util_FastIntegerCompression;
   "util/assertNever": typeof util_assertNever;
@@ -102,6 +107,7 @@ declare const fullApi: ApiFromModules<{
   "util/types": typeof util_types;
   "util/xxhash": typeof util_xxhash;
   world: typeof world;
+  "world/runtime": typeof world_runtime;
 }>;
 
 /**
