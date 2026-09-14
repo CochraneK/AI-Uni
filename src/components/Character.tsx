@@ -57,7 +57,7 @@ export const Character = ({
   const direction = ['right', 'down', 'left', 'up'][roundedOrientation];
 
   // Prevents the animation from stopping when the texture changes
-  // (see https://github.com/pixijs/pixi-react/issues/359)
+  // (see https://github.com/pixi-react/issues/359)
   const ref = useRef<PIXI.AnimatedSprite | null>(null);
   useEffect(() => {
     if (isMoving) {
@@ -111,10 +111,30 @@ export const Character = ({
 function ViewerIndicator() {
   const draw = useCallback((g: PIXI.Graphics) => {
     g.clear();
-    g.beginFill(0xffff0b, 0.5);
-    g.drawRoundedRect(-10, 10, 20, 10, 100);
+    g.lineStyle(3, 0xffff0b, 1);
+    g.beginFill(0xffff0b, 0.18);
+    g.drawCircle(0, 7, 13);
     g.endFill();
   }, []);
 
-  return <Graphics draw={draw} />;
+  return (
+    <>
+      <Graphics draw={draw} />
+      <Text
+        x={0}
+        y={-27}
+        text="你"
+        anchor={{ x: 0.5, y: 0.5 }}
+        style={
+          new PIXI.TextStyle({
+            fontSize: 12,
+            fontWeight: 'bold',
+            fill: 0xffff0b,
+            stroke: 0x2b1b12,
+            strokeThickness: 3,
+          })
+        }
+      />
+    </>
+  );
 }
