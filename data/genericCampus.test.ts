@@ -5,6 +5,8 @@ import {
   objmap,
   zoneAnchors,
 } from './genericCampus';
+import { genericCampusInteractables } from './genericCampusInteractables';
+import { campusActivityById } from '../convex/life/activities';
 import { findLocationAtPosition } from '../convex/world/zones';
 
 const objectLayer = objmap[0];
@@ -74,6 +76,38 @@ describe('generic_campus_v1 map', () => {
     for (const anchor of Object.values(zoneAnchors)) {
       expect(reachable.has(`${anchor.x},${anchor.y}`)).toBe(true);
     }
+  });
+
+  test('keeps every activity object walkable, reachable and inside its semantic zone', () => {
+    const reachable = reachableFrom(zoneAnchors.campus_gate);
+    const interactionIds = new Set<string>();
+    const activityIds = new Set<string>();
+
+    for (const interactable of genericCampusInteractables) {
+      expect(interactionIds.has(interactable.id)).toBe(false);
+      interactionIds.add(interactable.id);
+
+      expect(activityIds.has(interactable.activityId)).toBe(false);
+      activityIds.add(interactable.activityId);
+
+      const activity = campusActivityById[interactable.activityId];
+      expect(activity).toBeDefined();
+      expect(activity.locationId).toBe(interactable.locationId);
+      expect(isWalkable(interactable.anchor.x, interactable.anchor.y)).toBe(true);
+      expect(reachable.has(`${interactable.anchor.x},${interactable.anchor.y}`)).toBe(true);
+      expect(
+        findLocationAtPosition(
+          interactable.anchor.x,
+          interactable.anchor.y,
+          mapwidth,
+          mapheight,
+          'generic_campus_v1',
+        ),
+      ).toBe(interactable.locationId);
+    }
+
+    expect(genericCampusInteractables).toHaveLength(16);
+    expect(activityIds.size).toBe(16);
   });
 
   test('leaves most of the campus traversable rather than turning scenery into collision walls', () => {
