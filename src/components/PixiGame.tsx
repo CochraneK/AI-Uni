@@ -35,6 +35,7 @@ export const PixiGame = (props: {
   humanPlayerId?: GameId<'players'>;
   scenarioRuntime: ScenarioRuntimeView;
   navigationRequest?: CampusNavigationRequest;
+  focusMeRequestId?: number;
   onFocusActivity: (activityId: string) => void;
   setSelectedElement: SelectElement;
 }) => {
@@ -100,16 +101,34 @@ export const PixiGame = (props: {
     : undefined;
   const currentLocationId = props.scenarioRuntime.locationId as CampusLocationId | undefined;
 
+  const focusHumanPlayer = () => {
+    if (!viewportRef.current || props.humanPlayerId === undefined) return;
+    const humanPlayer = props.game.world.players.get(props.humanPlayerId);
+    if (!humanPlayer) return;
+    viewportRef.current.animate({
+      position: new PIXI.Point(
+        humanPlayer.position.x * tileDim + tileDim / 2,
+        humanPlayer.position.y * tileDim + tileDim / 2,
+      ),
+      scale: 1.5,
+      time: 300,
+    });
+  };
+
   // Zoom on the user’s avatar when it is created.
   useEffect(() => {
-    if (!viewportRef.current || props.humanPlayerId === undefined) return;
-
-    const humanPlayer = props.game.world.players.get(props.humanPlayerId)!;
-    viewportRef.current.animate({
-      position: new PIXI.Point(humanPlayer.position.x * tileDim, humanPlayer.position.y * tileDim),
-      scale: 1.5,
-    });
+    focusHumanPlayer();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.humanPlayerId]);
+
+  // Explicit "locate me" requests from the normal DOM UI. Keeping this as a
+  // request id means the same action can be repeated even when the player id
+  // and position object references have not changed.
+  useEffect(() => {
+    if (!props.focusMeRequestId) return;
+    focusHumanPlayer();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.focusMeRequestId]);
 
   // Fixed commitments and future calendar items can ask the map to navigate to a
   // semantic campus place. For generic_campus_v1 we reuse the same tested zone
