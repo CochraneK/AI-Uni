@@ -13,14 +13,32 @@ export function isLoopbackLLMUrl(url: string) {
   return loopbackPattern.test(url.trim());
 }
 
+export function hasDeepSeekChat(env: EnvLike = process.env) {
+  return Boolean(env.DEEPSEEK_API_KEY?.trim());
+}
+
+/**
+ * Semantic memory is optional in AI-Uni. DeepSeek currently supplies the chat
+ * model for our hosted runtime, while the inherited AI Town memory layer needs
+ * a separate embeddings endpoint. Until one is explicitly configured, keep
+ * real DeepSeek dialogue enabled and simply skip semantic-memory generation.
+ */
+export function shouldUseSemanticNpcMemory(env: EnvLike = process.env) {
+  const mode = env.AI_UNI_MEMORY_MODE?.trim().toLowerCase();
+  if (mode === 'off' || mode === 'disabled') return false;
+  if (mode === 'on' || mode === 'enabled') return true;
+  if (hasDeepSeekChat(env)) return false;
+  return !shouldUseScriptedNpcFallback(env);
+}
+
 /**
  * `convex dev` runs actions inside a Convex deployment, not inside the local
  * Vite/Node process. A default Ollama URL such as 127.0.0.1 therefore points at
  * the Convex worker itself and can never reach the developer's laptop.
  *
  * In that situation AI-Uni keeps the simulation playable with deterministic
- * scripted NPC dialogue. Configuring a cloud-reachable LLM endpoint (or a
- * non-loopback Ollama host) automatically restores the real LLM path.
+ * scripted NPC dialogue. Configuring a cloud-reachable LLM endpoint, DeepSeek,
+ * or a non-loopback Ollama host automatically restores a real LLM chat path.
  */
 export function shouldUseScriptedNpcFallback(env: EnvLike = process.env) {
   const mode = env.AI_UNI_NPC_MODE?.trim().toLowerCase();
@@ -29,6 +47,8 @@ export function shouldUseScriptedNpcFallback(env: EnvLike = process.env) {
 
   const provider = env.LLM_PROVIDER?.trim().toLowerCase();
   if (provider === 'scripted') return true;
+
+  if (hasDeepSeekChat(env)) return false;
 
   if (env.LLM_API_URL) {
     return isLoopbackLLMUrl(env.LLM_API_URL);
