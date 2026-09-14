@@ -2,6 +2,7 @@ import { v } from 'convex/values';
 import { mutation, query } from './_generated/server';
 import { insertInput } from './aiTown/insertInput';
 import { conversationId, playerId } from './aiTown/ids';
+import { recordFirstWeekNpcInteractionForHumanToken } from './life/firstWeekProgress';
 import { writeTelemetryForHumanToken } from './research/telemetry';
 
 export const listMessages = query({
@@ -55,6 +56,8 @@ export const writeMessage = mutation({
       const otherPlayerId = conversation?.participants.find(
         (participant) => participant.playerId !== args.playerId,
       )?.playerId;
+
+      await recordFirstWeekNpcInteractionForHumanToken(ctx, author.human, otherPlayerId);
       await writeTelemetryForHumanToken(ctx, author.human, {
         eventType: 'dialogue',
         action: 'human_message_sent',
