@@ -13,6 +13,7 @@ export type ResearchUse = 'none' | 'behavioral_feature' | 'exploratory_only';
 export type ScenarioLifeContext = {
   seasons?: LifeSeasonId[];
   chapterIds?: string[];
+  chapterUnits?: number[];
   careerStages?: CareerStage[];
   developmentalTasks?: DevelopmentalTaskId[];
   relationshipTypes?: RelationshipType[];
