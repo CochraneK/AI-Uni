@@ -20,10 +20,113 @@ export const startSession = mutation({
     }),
 });
 
+/**
+ * High-level entry point for the eventual consent UI. Call this only after the
+ * participant has explicitly accepted the named consent version.
+ */
+export const startConsentedStudySession = mutation({
+  args: {
+    profileId: v.id('lifeProfiles'),
+    studyVersion: v.string(),
+    consentVersion: v.string(),
+    condition: v.optional(v.string()),
+    sensitiveResearchConsent: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const profile = await ctx.db.get(args.profileId);
+    if (!profile) throw new Error('Life profile not found');
+
+    if (profile.sessionId) {
+      const existing = await ctx.db.get(profile.sessionId);
+      if (existing && !existing.endedAt) return existing._id;
+    }
+
+    const now = Date.now();
+    const sessionId = await ctx.db.insert('researchSessions', {
+      participantKey: profile.profileKey,
+      worldId: profile.worldId,
+      startedAt: now,
+      studyVersion: args.studyVersion,
+      consentVersion: args.consentVersion,
+      condition: args.condition,
+    });
+
+    await ctx.db.patch(args.profileId, {
+      sessionId,
+      updatedAt: now,
+    });
+
+    const runtime = await ctx.db
+      .query('scenarioRuntimeStates')
+      .withIndex('byProfile', (q) => q.eq('profileId', args.profileId))
+      .first();
+    if (runtime) {
+      await ctx.db.patch(runtime._id, {
+        behavioralResearchConsent: true,
+        sensitiveResearchConsent: args.sensitiveResearchConsent ?? false,
+        updatedAt: now,
+      });
+    }
+
+    await ctx.db.insert('telemetryEvents', {
+      sessionId,
+      timestamp: now,
+      gameDay: profile.totalGameDays,
+      sceneId: runtime?.activeScenarioId,
+      locationId: runtime?.activeLocationId,
+      eventType: 'system',
+      action: 'research_session_started',
+      payload: {
+        consentVersion: args.consentVersion,
+        studyVersion: args.studyVersion,
+        sensitiveResearchConsent: args.sensitiveResearchConsent ?? false,
+      },
+    });
+
+    return sessionId;
+  },
+});
+
 export const endSession = mutation({
   args: { sessionId: v.id('researchSessions') },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.sessionId, { endedAt: Date.now() });
+  },
+});
+
+export const endConsentedStudySession = mutation({
+  args: { profileId: v.id('lifeProfiles') },
+  handler: async (ctx, args) => {
+    const profile = await ctx.db.get(args.profileId);
+    if (!profile) throw new Error('Life profile not found');
+    if (!profile.sessionId) return null;
+
+    const now = Date.now();
+    const session = await ctx.db.get(profile.sessionId);
+    if (session && !session.endedAt) {
+      await ctx.db.insert('telemetryEvents', {
+        sessionId: profile.sessionId,
+        timestamp: now,
+        gameDay: profile.totalGameDays,
+        eventType: 'system',
+        action: 'research_session_ended',
+      });
+      await ctx.db.patch(profile.sessionId, { endedAt: now });
+    }
+
+    const runtime = await ctx.db
+      .query('scenarioRuntimeStates')
+      .withIndex('byProfile', (q) => q.eq('profileId', args.profileId))
+      .first();
+    if (runtime) {
+      await ctx.db.patch(runtime._id, {
+        behavioralResearchConsent: false,
+        sensitiveResearchConsent: false,
+        updatedAt: now,
+      });
+    }
+
+    return profile.sessionId;
   },
 });
 
