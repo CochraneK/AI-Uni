@@ -14,6 +14,8 @@ export type ScenarioLifeContext = {
   seasons?: LifeSeasonId[];
   chapterIds?: string[];
   chapterUnits?: number[];
+  /** Only restricts the seven-day opening chapter. Ignored in later chapters. */
+  firstWeekDays?: number[];
   careerStages?: CareerStage[];
   developmentalTasks?: DevelopmentalTaskId[];
   relationshipTypes?: RelationshipType[];
