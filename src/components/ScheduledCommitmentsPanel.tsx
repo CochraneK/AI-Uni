@@ -62,6 +62,10 @@ export default function ScheduledCommitmentsPanel(props: {
             (commitment.temporalState === 'arrival_window' ||
               commitment.temporalState === 'late_window');
           const checkInDisabled = runningId !== undefined || !canArrive || !isHere;
+          const resolvedStatusText =
+            commitment.status === 'skipped' && commitment.attendanceRequired
+              ? '主动缺席'
+              : statusText[commitment.status] ?? commitment.status;
 
           return (
             <div
@@ -81,9 +85,7 @@ export default function ScheduledCommitmentsPanel(props: {
               </div>
 
               <div className="mt-1 text-xs leading-5 text-brown-400">
-                {unresolved
-                  ? temporalText[commitment.temporalState]
-                  : statusText[commitment.status] ?? commitment.status}
+                {unresolved ? temporalText[commitment.temporalState] : resolvedStatusText}
                 {unresolved && canArrive && !isHere ? ` · 先到${commitmentLocationName}` : ''}
                 {unresolved && canArrive && isHere && activeScenario
                   ? ' · 到场会优先收束当前随机事件'
@@ -139,29 +141,31 @@ export default function ScheduledCommitmentsPanel(props: {
                   >
                     {commitment.temporalState === 'late_window' ? '迟到后参加' : '到场'}
                   </button>
-                  <button
-                    className="rounded border border-brown-600 px-2.5 py-1.5 text-xs text-brown-200 hover:bg-brown-700 disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={runningId !== undefined}
-                    onClick={() => {
-                      setMessage(undefined);
-                      setRunningId(commitment._id);
-                      void skipCommitment({ commitmentId: commitment._id })
-                        .then((result) => {
-                          setMessage(
-                            result.skipped
-                              ? `${commitment.title}：已选择不参加。`
-                              : `${commitment.title} 已经处理过了。`,
-                          );
-                        })
-                        .catch((error) => {
-                          console.error('Failed to skip AI-Uni commitment', error);
-                          setMessage('暂时无法更新这个安排。');
-                        })
-                        .finally(() => setRunningId(undefined));
-                    }}
-                  >
-                    {commitment.attendanceRequired ? '不参加' : '跳过'}
-                  </button>
+                  {!commitment.attendanceRequired && (
+                    <button
+                      className="rounded border border-brown-600 px-2.5 py-1.5 text-xs text-brown-200 hover:bg-brown-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={runningId !== undefined}
+                      onClick={() => {
+                        setMessage(undefined);
+                        setRunningId(commitment._id);
+                        void skipCommitment({ commitmentId: commitment._id })
+                          .then((result) => {
+                            setMessage(
+                              result.skipped
+                                ? `${commitment.title}：已选择不参加。`
+                                : `${commitment.title} 已经处理过了。`,
+                            );
+                          })
+                          .catch((error) => {
+                            console.error('Failed to skip AI-Uni commitment', error);
+                            setMessage('暂时无法更新这个安排。');
+                          })
+                          .finally(() => setRunningId(undefined));
+                      }}
+                    >
+                      跳过
+                    </button>
+                  )}
                 </div>
               )}
             </div>
