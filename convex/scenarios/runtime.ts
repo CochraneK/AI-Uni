@@ -6,9 +6,11 @@ import {
   getDayClock,
   makeDayClockKey,
   minutesRemainingInDay,
+  spendMinutes,
 } from '../life/dayClock';
 import type { WorldLocationId } from '../world/locations';
 import { worldLocations } from '../world/locations';
+import { estimateCampusTravelMinutes } from '../world/travel';
 import { getUniversityProfile } from '../campus/registry';
 import { npcRoleTagsForName } from '../../data/npcProfiles';
 import { writeTelemetryForProfile } from '../research/telemetry';
@@ -231,12 +233,19 @@ export const enterScenarioLocation = mutation({
     }
 
     // Zone transition calls are idempotent. Remaining inside the same zone does
-    // not repeatedly reroll scenes on every movement tick.
+    // not repeatedly reroll scenes or charge walking time on movement ticks.
     if (runtime.activeLocationId === locationId) {
+      if (runtime.lastKnownLocationId !== locationId) {
+        await ctx.db.patch(args.runtimeId, {
+          lastKnownLocationId: locationId,
+          updatedAt: Date.now(),
+        });
+      }
       return {
         locationId,
         scenario: runtime.activeScenarioId ? getScenario(runtime.activeScenarioId) : undefined,
         changed: false,
+        travelMinutes: 0,
       };
     }
 
@@ -258,16 +267,49 @@ export const enterScenarioLocation = mutation({
     if (!profile) throw new Error('Life profile not found');
     const profileState =
       profile.state && typeof profile.state === 'object' ? profile.state : {};
-    const clock = getDayClock(profileState, makeDayClockKey(profile));
+    let clock = getDayClock(profileState, makeDayClockKey(profile));
+
+    const previousLocationId = runtime.lastKnownLocationId as WorldLocationId | undefined;
+    const universityProfile = getUniversityProfile(profile.universityProfileId);
+    const estimatedTravelMinutes = previousLocationId
+      ? estimateCampusTravelMinutes(
+          universityProfile?.mapId,
+          previousLocationId,
+          locationId,
+        ) ?? 0
+      : 0;
+    const travelMinutes = Math.min(
+      estimatedTravelMinutes,
+      minutesRemainingInDay(clock),
+    );
+    const travelStartedAtGameMinute = clock.minute;
+
+    if (travelMinutes > 0) {
+      const nextClock = spendMinutes(clock, travelMinutes);
+      if (nextClock) {
+        clock = nextClock;
+        await ctx.db.patch(profile._id, {
+          state: {
+            ...profileState,
+            dayClock: nextClock,
+          },
+          updatedAt: now,
+        });
+      }
+    }
+
     const remainingMinutes = minutesRemainingInDay(clock);
 
     await writeTelemetryForProfile(ctx, runtime.profileId, {
       eventType: 'movement',
       action: 'location_enter',
       locationId,
-      payload: runtime.activeLocationId
-        ? { fromLocationId: runtime.activeLocationId }
-        : undefined,
+      payload: {
+        ...(previousLocationId ? { fromLocationId: previousLocationId } : {}),
+        travelMinutes,
+        travelStartedAtGameMinute,
+        travelEndedAtGameMinute: clock.minute,
+      },
     });
 
     const taskStates = await ctx.db
@@ -310,13 +352,20 @@ export const enterScenarioLocation = mutation({
     if (!selected) {
       await ctx.db.patch(args.runtimeId, {
         activeLocationId: locationId,
+        lastKnownLocationId: locationId,
         activeScenarioId: undefined,
         activeRunId: undefined,
         locationEnteredAt: now,
         selectionIndex: nextSelectionIndex,
         updatedAt: now,
       });
-      return { locationId, scenario: undefined, changed: true };
+      return {
+        locationId,
+        scenario: undefined,
+        changed: true,
+        travelMinutes,
+        gameMinute: clock.minute,
+      };
     }
 
     const npcAssignments = runtime.worldId
@@ -344,6 +393,7 @@ export const enterScenarioLocation = mutation({
 
     await ctx.db.patch(args.runtimeId, {
       activeLocationId: locationId,
+      lastKnownLocationId: locationId,
       activeScenarioId: selected.scenario.id,
       activeRunId: runId,
       locationEnteredAt: now,
@@ -369,6 +419,7 @@ export const enterScenarioLocation = mutation({
       scenario: selected.scenario,
       npcAssignments,
       changed: true,
+      travelMinutes,
       startedAtGameMinute: clock.minute,
     };
   },
@@ -405,6 +456,9 @@ export const leaveScenarioLocation = mutation({
       });
     }
 
+    // lastKnownLocationId deliberately survives an unzoned corridor. The next
+    // semantic zone entry can therefore charge one travel block from the true
+    // previous campus place instead of losing the origin midway through a walk.
     await ctx.db.patch(args.runtimeId, {
       activeLocationId: undefined,
       activeScenarioId: undefined,
