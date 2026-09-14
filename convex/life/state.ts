@@ -1,5 +1,6 @@
 import { v } from 'convex/values';
 import { mutation, query } from '../_generated/server';
+import { getUniversityProfile } from '../campus/registry';
 import { defaultFamilySystem, defaultLifeProfile } from './model';
 
 const relationshipTypeValidator = v.union(
@@ -18,11 +19,18 @@ const relationshipTypeValidator = v.union(
   v.literal('community'),
 );
 
+const assertUniversityProfile = (profileId: string) => {
+  if (!getUniversityProfile(profileId)) {
+    throw new Error(`Unknown university profile: ${profileId}`);
+  }
+};
+
 export const createLifeProfile = mutation({
   args: {
     profileKey: v.string(),
     worldId: v.optional(v.id('worlds')),
     sessionId: v.optional(v.id('researchSessions')),
+    universityProfileId: v.optional(v.string()),
     initialState: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
@@ -32,12 +40,19 @@ export const createLifeProfile = mutation({
       .first();
     if (existing) return existing._id;
 
-    const state = { ...defaultLifeProfile, ...(args.initialState ?? {}) };
+    const state = {
+      ...defaultLifeProfile,
+      ...(args.initialState ?? {}),
+      ...(args.universityProfileId ? { universityProfileId: args.universityProfileId } : {}),
+    };
+    assertUniversityProfile(state.universityProfileId);
+
     const now = Date.now();
     const profileId = await ctx.db.insert('lifeProfiles', {
       profileKey: args.profileKey,
       worldId: args.worldId,
       sessionId: args.sessionId,
+      universityProfileId: state.universityProfileId,
       age: state.age,
       season: state.season,
       lifeStage: state.lifeStage,
@@ -72,6 +87,49 @@ export const getLifeProfile = query({
       .first(),
 });
 
+export const changeUniversityProfile = mutation({
+  args: {
+    profileId: v.id('lifeProfiles'),
+    universityProfileId: v.string(),
+    reason: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    assertUniversityProfile(args.universityProfileId);
+    const profile = await ctx.db.get(args.profileId);
+    if (!profile) throw new Error('Life profile not found');
+
+    const previousUniversityProfileId = profile.universityProfileId;
+    const state = {
+      ...(typeof profile.state === 'object' && profile.state ? profile.state : {}),
+      universityProfileId: args.universityProfileId,
+    };
+
+    await ctx.db.patch(args.profileId, {
+      universityProfileId: args.universityProfileId,
+      state,
+      updatedAt: Date.now(),
+    });
+
+    await ctx.db.insert('lifeEvents', {
+      profileId: args.profileId,
+      timestamp: Date.now(),
+      age: profile.age,
+      chapterId: profile.chapterId,
+      category: 'education',
+      eventKey: 'university_profile_change',
+      title: '大学环境发生变化',
+      turningPoint: 'transition',
+      payload: {
+        from: previousUniversityProfileId,
+        to: args.universityProfileId,
+        reason: args.reason,
+      },
+    });
+
+    return { previousUniversityProfileId, universityProfileId: args.universityProfileId };
+  },
+});
+
 export const advanceLifeUnit = mutation({
   args: {
     profileId: v.id('lifeProfiles'),
@@ -93,15 +151,20 @@ export const advanceLifeUnit = mutation({
     }
 
     const patch = args.statePatch ?? {};
+    const universityProfileId = patch.universityProfileId ?? profile.universityProfileId;
+    assertUniversityProfile(universityProfileId);
+
     const nextState = {
       ...(typeof profile.state === 'object' && profile.state ? profile.state : {}),
       ...patch,
+      universityProfileId,
       chapterId,
       chapterUnit,
       totalGameDays,
     };
 
     await ctx.db.patch(args.profileId, {
+      universityProfileId,
       age: patch.age ?? profile.age,
       season: patch.season ?? profile.season,
       lifeStage: patch.lifeStage ?? profile.lifeStage,
@@ -114,7 +177,7 @@ export const advanceLifeUnit = mutation({
       updatedAt: Date.now(),
     });
 
-    return { chapterId, chapterUnit, totalGameDays };
+    return { universityProfileId, chapterId, chapterUnit, totalGameDays };
   },
 });
 
