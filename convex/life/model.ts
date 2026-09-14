@@ -13,10 +13,12 @@ export const lifeModelPrinciples = [
   'Repeated observations across contexts are stronger evidence than one event.',
   'Protective factors, supportive relationships and successful coping must be able to alter later trajectories.',
   'Marriage, parenthood and conventional careers are optional branches, not required markers of healthy development.',
+  'University-specific templates may change context and opportunity structures but must not change the core interpretation boundaries.',
   'Game state is not a clinical record and must not be presented as diagnosis or treatment guidance.',
 ] as const;
 
 export const defaultLifeProfile: LifeProfileSnapshot = {
+  universityProfileId: 'generic_university',
   age: 18,
   season: 'university',
   lifeStage: 'late_adolescence_identity',
@@ -88,8 +90,8 @@ export const createDefaultRelationship = (
 export const baselineEcology: EcologicalContextSnapshot[] = [
   {
     system: 'microsystem',
-    key: 'dormitory',
-    description: '室友、日常起居和近距离生活规则。',
+    key: 'student_living_arrangement',
+    description: '宿舍、校外合租、家庭居住或其他日常居住与通勤环境。',
     opportunity: 0.7,
     stress: 0.25,
     stability: 0.6,
@@ -113,7 +115,7 @@ export const baselineEcology: EcologicalContextSnapshot[] = [
   {
     system: 'mesosystem',
     key: 'family_school_link',
-    description: '家庭期待与学校路径之间的互动，例如专业、考研或就业选择。',
+    description: '家庭期待与学校路径之间的互动，例如专业、继续教育或就业选择。',
     opportunity: 0.45,
     stress: 0.3,
     stability: 0.55,
