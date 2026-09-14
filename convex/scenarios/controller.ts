@@ -12,6 +12,8 @@ export type ScenarioSelectionContext = {
   recentScenarioIds: string[];
   completedScenarioIds?: string[];
   sensitiveResearchConsent: boolean;
+  /** Remaining playable minutes in the current game day. */
+  remainingMinutes?: number;
   seed: string;
   selectionIndex: number;
 };
@@ -64,6 +66,16 @@ export const scenarioCanRun = (
   if (
     (scenario.safetyLevel === 'sensitive' || scenario.packId === 'sensitive-research') &&
     !context.sensitiveResearchConsent
+  ) {
+    return false;
+  }
+
+  // Time is a gameplay constraint, not a psychological variable. A scene that
+  // cannot fit before the day cutoff is excluded before weighted selection so
+  // the player never enters an event that the clock cannot finish.
+  if (
+    context.remainingMinutes !== undefined &&
+    scenario.estimatedMinutes > Math.max(0, context.remainingMinutes)
   ) {
     return false;
   }
