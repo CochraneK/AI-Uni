@@ -1,11 +1,31 @@
 import { v } from 'convex/values';
-import { mutation } from '../_generated/server';
+import { mutation, query } from '../_generated/server';
 import { firstWeekEndCondition, universityFirstWeek } from './firstWeek';
 import {
   evaluateFirstWeekReadiness,
   markFirstWeekDayCompleted,
 } from './firstWeekProgress';
 import { writeTelemetryForProfile } from '../research/telemetry';
+
+export const getFirstWeekStatus = query({
+  args: {
+    profileId: v.id('lifeProfiles'),
+  },
+  handler: async (ctx, args) => {
+    const profile = await ctx.db.get(args.profileId);
+    if (!profile || profile.chapterId !== 'university_first_week') return null;
+
+    const progress = await evaluateFirstWeekReadiness(ctx, args.profileId);
+    return {
+      currentDay: profile.chapterUnit,
+      requiredPlayableDays: firstWeekEndCondition.requiredPlayableDays,
+      minimumCoreEvents: firstWeekEndCondition.minimumCoreEvents,
+      minimumDistinctNpcInteractions: firstWeekEndCondition.minimumDistinctNpcInteractions,
+      requireOrdinaryLifeCompletion: firstWeekEndCondition.requireOrdinaryLifeCompletion,
+      ...progress,
+    };
+  },
+});
 
 export const endFirstWeekDay = mutation({
   args: {
