@@ -60,6 +60,9 @@ export default function ScenarioStatusPanel(props: {
           <p className="mt-2 text-sm text-brown-300">
             当前目标：{activeScenario.ordinaryGoal}
           </p>
+          <p className="mt-2 text-xs leading-5 text-brown-400">
+            和事件相关的人自然交谈会推进事件；也可以在你认为事情已经处理完时手动结束。
+          </p>
           {runtime && (
             <button
               className="mt-3 rounded bg-brown-600 px-3 py-2 text-sm font-semibold text-brown-50 hover:bg-brown-500"
