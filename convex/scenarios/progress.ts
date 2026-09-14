@@ -1,0 +1,111 @@
+import { getScenario } from './registry';
+import { recordFirstWeekScenarioCompletion } from '../life/firstWeekProgress';
+import { writeTelemetryForProfile } from '../research/telemetry';
+
+const MAX_COMPLETED_SCENARIOS = 256;
+
+const uniqueAppend = (items: string[], value: string) =>
+  items.includes(value) ? items : [...items, value];
+
+const autoCompletionThreshold = (scenario: ReturnType<typeof getScenario>) => {
+  if (!scenario) return undefined;
+  if (scenario.safetyLevel === 'sensitive') return undefined;
+  if (scenario.researchUse === 'none') return 1;
+  if (scenario.safetyLevel === 'mild_stress') return 3;
+  return 2;
+};
+
+export const recordScenarioDialogueProgress = async (
+  ctx: any,
+  humanToken: string,
+  npcId?: string,
+) => {
+  if (!npcId) return { tracked: false, completed: false };
+
+  const profile = await ctx.db
+    .query('lifeProfiles')
+    .withIndex('byProfileKey', (q: any) => q.eq('profileKey', `ai-uni:${humanToken}`))
+    .first();
+  if (!profile) return { tracked: false, completed: false };
+
+  const runtime = await ctx.db
+    .query('scenarioRuntimeStates')
+    .withIndex('byProfile', (q: any) => q.eq('profileId', profile._id))
+    .first();
+  if (!runtime?.activeRunId || !runtime.activeScenarioId) {
+    return { tracked: false, completed: false };
+  }
+
+  const run = await ctx.db.get(runtime.activeRunId);
+  if (!run || run.endedAt) return { tracked: false, completed: false };
+
+  const assignedNpcIds = new Set(
+    (run.npcAssignments ?? []).map((assignment: any) => assignment.playerId as string),
+  );
+  if (assignedNpcIds.size > 0 && !assignedNpcIds.has(npcId)) {
+    return { tracked: false, completed: false };
+  }
+
+  const scenario = getScenario(runtime.activeScenarioId);
+  const threshold = autoCompletionThreshold(scenario);
+  const humanMessageCount = (run.humanMessageCount ?? 0) + 1;
+  const interactedNpcIds = uniqueAppend(run.interactedNpcIds ?? [], npcId);
+
+  await ctx.db.patch(run._id, {
+    humanMessageCount,
+    interactedNpcIds,
+  });
+
+  if (!threshold || humanMessageCount < threshold || !scenario) {
+    return {
+      tracked: true,
+      completed: false,
+      humanMessageCount,
+      threshold,
+    };
+  }
+
+  const now = Date.now();
+  const outcome = 'auto_completed_dialogue';
+  await ctx.db.patch(run._id, {
+    endedAt: now,
+    outcome,
+  });
+
+  const completedScenarioIds = uniqueAppend(
+    runtime.completedScenarioIds,
+    runtime.activeScenarioId,
+  ).slice(-MAX_COMPLETED_SCENARIOS);
+  await ctx.db.patch(runtime._id, {
+    activeScenarioId: undefined,
+    activeRunId: undefined,
+    completedScenarioIds,
+    updatedAt: now,
+  });
+
+  await recordFirstWeekScenarioCompletion(
+    ctx,
+    profile._id,
+    scenario.id,
+    scenario.researchUse === 'none',
+  );
+  await writeTelemetryForProfile(ctx, profile._id, {
+    eventType: 'scene_exit',
+    action: outcome,
+    sceneId: scenario.id,
+    locationId: runtime.activeLocationId,
+    npcId,
+    payload: {
+      humanMessageCount,
+      completionThreshold: threshold,
+    },
+  });
+
+  return {
+    tracked: true,
+    completed: true,
+    humanMessageCount,
+    threshold,
+    scenarioId: scenario.id,
+  };
+};
