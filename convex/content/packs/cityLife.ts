@@ -14,6 +14,7 @@ export const cityLifePack = defineContentPack({
       location: 'restaurant',
       ordinaryGoal: '和朋友完成一次普通聚餐。',
       setup: '原本约了五个人，其中两个人在出发前临时说来不了，剩下的人对是否继续聚餐意见不同。',
+      estimatedMinutes: 90,
       npcRoles: ['friend', 'classmate', 'late_canceller'],
       hiddenTargets: [
         'social.rejection_sensitivity',
@@ -40,6 +41,7 @@ export const cityLifePack = defineContentPack({
       location: 'ktv',
       ordinaryGoal: '参加朋友生日聚会。',
       setup: '大家起哄让玩家唱一首歌，其中一个人持续催促，但也有人说“不想唱也没事”。',
+      estimatedMinutes: 120,
       npcRoles: ['friend', 'pushy_friend', 'supportive_friend'],
       hiddenTargets: ['big5.extraversion', 'emotion.regulation', 'social.support_seeking'],
       safetyLevel: 'ordinary',
@@ -61,6 +63,7 @@ export const cityLifePack = defineContentPack({
       location: 'transit_hub',
       ordinaryGoal: '按计划到达约定地点。',
       setup: '出发后遇到明显延误，朋友已经到了，地图上有几条时间与费用不同的替代路线。',
+      estimatedMinutes: 45,
       npcRoles: ['friend_remote'],
       hiddenTargets: [
         'big5.conscientiousness',
@@ -86,6 +89,7 @@ export const cityLifePack = defineContentPack({
       location: 'internship_office',
       ordinaryGoal: '根据反馈修改一份实习任务。',
       setup: '带教给出的修改意见有实际内容，但措辞比较生硬；同组实习生对这位带教评价也不一致。',
+      estimatedMinutes: 45,
       npcRoles: ['supervisor', 'intern_peer'],
       hiddenTargets: [
         'emotion.regulation',
