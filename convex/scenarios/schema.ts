@@ -31,6 +31,8 @@ export const scenarioTables = {
     endedAt: v.optional(v.number()),
     outcome: v.optional(v.string()),
     selectionIndex: v.number(),
+    selectionReasons: v.optional(v.array(v.string())),
+    candidateCount: v.optional(v.number()),
   })
     .index('byRuntimeTime', ['runtimeId', 'startedAt'])
     .index('byProfileScenario', ['profileId', 'scenarioId']),
