@@ -4,71 +4,46 @@
 
 AI-Uni 是一个基于多智能体虚拟世界的大学生活、人生发展与心理行为研究原型。默认世界不绑定任何一所真实大学，而是模拟广泛意义上的大学生活；之后再通过可插拔的 University Template 加载特定大学地图、地点显示名、校园文化和专属事件。
 
-从大学阶段开始，AI-Uni 会逐步扩展到校外生活、考试、假期、升年级、毕业、实习、工作、亲密关系、家庭、中年、退休和生命回顾。
-
 项目的核心原则是：**先让它像一个真实、可玩的生活世界，再把心理测量作为后台研究层。**
 
 > AI-Uni 基于 a16z 的开源项目 [AI Town](https://github.com/a16z-infra/ai-town) 扩展。仓库中保留的 `aiTown` 模块名、上游链接和 `AI Town` 归因均指原始上游项目，不是当前产品名称。
 
-## 当前方向
+## 现在已经能做什么
+
+当前分支已经形成第一条可玩的大学生活闭环：
 
 ```text
-AI-Uni
-│
-├── Generic University Core
-│   ├── 大学第一周（7 个完整可玩日）
-│   ├── 课程 / 考试 / 社团 / 住宿或通勤 / 朋友
-│   ├── 大一 / 大二 / 大三 / 大四 / 毕业
-│   └── 可配置学制、学期制、校园类型与住宿结构
-│
-├── University Templates
-│   ├── generic_university（默认）
-│   ├── bjtu_inspired（planned / optional）
-│   └── future templates...
-│
-├── 人生世界
-│   ├── 实习 / 求职 / 第一份工作 / 跳槽 / 转行
-│   ├── 亲密关系 / 婚姻或其他长期关系 / 家庭
-│   ├── 中年 / 照护 / 职业后期
-│   └── 退休 / 晚年 / 生命回顾
-│
-├── LLM NPC
-│   ├── 同学 / 同住者 / 老师 / 社团成员
-│   ├── 朋友 / 伴侣 / 家庭成员
-│   ├── 同事 / 上司 / 导师
-│   └── 可以跨越多年持续存在的重要关系
-│
-├── Life-Course Layer
-│   ├── 发展阶段与任务
-│   ├── 家庭系统与代际传递
-│   ├── 关系特异的依恋动态
-│   ├── 身份 / 价值 / 自我概念
-│   ├── 生态系统与社会环境
-│   ├── 压力 / 应对 / 复原
-│   ├── 社会网络与社会支持
-│   └── 意义 / generativity / life review
-│
-├── Content Packs
-│   ├── campus-life
-│   ├── social-friction
-│   ├── city-life
-│   ├── life-course
-│   └── sensitive-research
-│
-├── Behavioral Telemetry
-│   ├── movement
-│   ├── dialogue
-│   ├── decisions
-│   └── response latency
-│
-└── Assessment Layer
-    ├── Big Five
-    ├── CAPE-P15 related constructs
-    ├── PCL-5 associated constructs
-    └── future measures
+原创 generic_campus_v1 地图
+        ↓
+玩家移动到校园功能区
+        ↓
+WorldLocationId / 第一周日程 / 安全规则过滤
+        ↓
+普通生活事件或任务事件
+        ↓
+NPC 角色分配 + LLM 对话
+        ↓
+对话推进 / 手动完成事件
+        ↓
+没有事件时做本地日常活动
+        ↓
+结束一天
+        ↓
+第 7 天真实完成门槛
+        ↓
+freshman_year
 ```
 
-## 通用大学核心
+第一周不是演示页，而是 **7 个完整可玩日**。Day 7 只有满足以下游戏条件才能进入下一章：
+
+- 完成 7 个可玩日；
+- 完成至少 3 个核心生活事件；
+- 与至少 4 位不同 NPC 有真实玩家发言互动；
+- 至少完成一次普通生活体验。
+
+普通生活体验既可以来自纯日常场景，也可以来自自由校园活动。自由活动**不会**拿来凑 3 个核心事件，也不会直接换算人格或症状分数。
+
+## Generic University Core
 
 AI-Uni 的场景逻辑使用稳定、跨学校的功能地点 ID：
 
@@ -83,58 +58,105 @@ sports_field
 dormitory
 ```
 
-场景只需要知道“这是教学楼”或“这是校园公共空间”，不需要知道真实学校的建筑名。
+场景只需要知道“这是图书馆”或“这是校园公共空间”，不需要知道某所真实学校的建筑名。University Template 可以覆盖玩家看到的地点名称、地图、主题内容和校园文化，但底层剧情、人生状态和研究数据仍使用稳定语义 ID。
 
-具体学校模板可以覆盖显示名称，例如：
+`convex/campus/profiles.ts` 可描述：
 
-```text
-teaching_building → 某校具体教学楼名称
-campus_green      → 某校具体公共空间名称
-```
-
-但底层场景、人生状态和研究数据仍然使用通用 ID。
-
-`convex/campus/profiles.ts` 定义大学 profile，可配置：
-
-- research / teaching / liberal-arts / applied / community-college 等 institution model；
+- institution model；
 - residential / commuter / hybrid / distributed campus；
 - urban / suburban / town / rural；
 - semester / quarter / trimester / custom calendar；
 - 学制长度；
-- 住宿可得性和通勤比例；
+- 住宿与通勤结构；
 - 校园开放程度；
 - 地点显示名覆盖；
-- 地图和主题 Content Pack。
+- map/theme content packs。
 
-详见 [`docs/UNIVERSITY_CORE.md`](docs/UNIVERSITY_CORE.md)。
-
-## 特定大学模板
-
-特定大学不是产品核心依赖，而是可选扩展。
-
-当前模板注册表：
+当前模板注册：
 
 ```text
 generic_university  core / default
 bjtu_inspired       planned / optional
 ```
 
-此前积累的北交大风格设计已迁移成可选模板，不再作为 AI-Uni 默认世界。详见 [`docs/templates/BJTU_TEMPLATE.md`](docs/templates/BJTU_TEMPLATE.md)。
+BJTU-inspired 内容只是可选模板示例，不是 AI-Uni 默认世界。详见 [`docs/UNIVERSITY_CORE.md`](docs/UNIVERSITY_CORE.md) 和 [`docs/templates/BJTU_TEMPLATE.md`](docs/templates/BJTU_TEMPLATE.md)。
 
-未来同样可以加入其他真实大学，或加入不绑定真实学校的类型模板，例如：
+## 原创通用校园地图
+
+默认新世界现在使用 **`generic_campus_v1`**，不是上游 AI Town 的 starter map。
+
+- 地图模块：`data/genericCampus.ts`
+- 尺寸：48 × 36 tiles
+- tile size：32 px
+- 原创 tileset：`assets/generic-campus-v1.png`
+- Web 资产路径：`/ai-uni/assets/generic-campus-v1.png`
+
+地图包含教学楼、图书馆、活动中心、食堂、公共绿地、运动场、住宿区和校园入口，并带真实碰撞几何与连通路径。
+
+测试会检查：
+
+- tile 尺寸与索引合法；
+- 八个功能区 anchor 与语义位置一致；
+- 功能区可走；
+- 每个功能区都能通过可行走路径到达校门；
+- 场景物体不会把地图堵成不可玩。
+
+`data/gentle.js` 仍保留作为 inherited / legacy map 资产，但不再是新世界默认地图。
+
+## 普通校园活动
+
+当当前地点没有必须处理的事件时，右侧栏会出现该地点的普通活动。当前共有 **16 个活动，每个校园功能区 2 个**，例如：
+
+- 食堂：吃顿饭、买点喝的；
+- 图书馆：安静自习、随便翻书；
+- 活动中心：看看活动海报、坐下来歇会儿；
+- 公共空间：散步、坐一会儿；
+- 运动场：慢跑、看会儿球；
+- 宿舍：整理自己的位置、休息。
+
+规则：
 
 ```text
-large_urban_research_university
-small_residential_college
-commuter_city_university
-international_exchange_campus
+同一个活动每天最多一次
+每天最多 3 个不同自由活动
+有正在处理的核心事件时不能用自由活动绕过去
+必须真的在对应地点才能执行
 ```
 
-这使 AI-Uni 可以比较不同大学生态，而不是把一所学校的结构硬编码进整个产品。
+完成活动会写入人生历史。若参与者已明确开启研究记录且存在开放 research session，才会额外写最小化活动 telemetry；普通游玩模式不会因此开启研究记录。
+
+## LLM NPC 与场景
+
+NPC 的可见行为围绕普通大学生活：课程、吃饭、室友、社团、小组作业、朋友和日常计划。
+
+场景启动时会：
+
+1. 根据地点、人生阶段、第一周日数、content pack 和安全规则选场景；
+2. 给适合的 NPC 分配叙事角色；
+3. 把**普通叙事上下文**传给 NPC；
+4. 通过玩家与相关 NPC 的真实对话推进事件。
+
+NPC 不会收到：
+
+- `hiddenTargets`；
+- CAPE/PCL/Big Five 问卷名称；
+- 内部 selector 权重；
+- 研究特征 key。
+
+当前对话自动完成阈值只是剧情节奏规则：
+
+```text
+纯日常场景     1 次有效玩家回复
+普通任务场景   2 次
+轻压力场景     3 次
+敏感场景       永不自动完成
+```
+
+这些数字不参与心理计分。
 
 ## 人生模拟层
 
-AI-Uni 不把整个游戏做成一次短测验。第一章是 **大学第一周，共 7 个完整游戏日**；之后逐渐压缩时间尺度，让一个存档可以跨越几十年。
+AI-Uni 不把整个游戏做成一次短测验。第一章之后逐渐压缩时间尺度，让同一个存档最终可以跨越几十年。
 
 ```text
 第一周       1 unit = 1 天
@@ -145,53 +167,62 @@ AI-Uni 不把整个游戏做成一次短测验。第一章是 **大学第一周�
 中晚年       1 unit ≈ 数年
 ```
 
-重要人生事件仍然可以展开成完整可玩章节，而不是全部跳过。
-
-当前人生心理架构整合了：
+长期架构目前整合：
 
 - Erikson-inspired 生命周期发展主题；
-- life-course：时机、转折点、路径依赖、累积效应、linked lives；
+- life-course timing / turning points / linked lives / cumulative effects；
 - Bronfenbrenner-inspired 生态系统；
 - 家庭系统与代际传递；
 - 关系特异的依恋动态；
 - 身份探索与承诺；
 - 压力评价、应对与复原；
-- 自主 / 胜任 / 联结等长期动机需要；
-- 社会网络 / social convoy；
-- 中晚年的选择、优化与补偿；
-- 意义、generativity、遗憾与生命回顾。
+- 自主 / 胜任 / 联结等长期需要；
+- social convoy / 社会支持；
+- 中晚年选择、优化与补偿；
+- 意义、generativity、遗憾与 life review。
 
-这些理论用于**设计状态、事件和概率**，而不是直接生成“成熟度”“依恋型”“人生成功分”等标签。
+这些理论用于**状态、事件和概率**，不是直接生成“成熟度”“依恋型”“人生成功分”等标签。详见 [`docs/LIFE_COURSE_MODEL.md`](docs/LIFE_COURSE_MODEL.md)。
 
-详见 [`docs/LIFE_COURSE_MODEL.md`](docs/LIFE_COURSE_MODEL.md)。
+## Content Packs
 
-## 研究边界
+当前 content packs：
+
+- `campus-life`：普通大学日常，默认启用；
+- `social-friction`：失约、插队、同住冲突、小组分工不公等现实摩擦；
+- `city-life`：聚餐、KTV、交通、实习等校外内容，已注册、等待校外地图接入；
+- `life-course`：毕业、工作、长期关系、家庭照护、退休等长期内容；
+- `sensitive-research`：CAPE/PCL 相关探索性研究内容，默认关闭并要求独立研究方案与额外 consent。
+
+场景可以通过 `lifeContext` 限定年龄、season、章节、第一周日数、职业阶段、发展任务与关系类型。普通生活内容可以明确使用：
+
+```ts
+researchUse: 'none'
+hiddenTargets: []
+observableFeatures: []
+```
+
+详见 [`docs/CONTENT_PACKS.md`](docs/CONTENT_PACKS.md) 与 [`docs/RUNTIME_V1.md`](docs/RUNTIME_V1.md)。
+
+## 研究与心理测量边界
 
 游戏行为首先是**待验证的行为特征**，不能直接等同于正式心理量表结果。
 
-- 大五人格：通过重复日常行为形成候选特征，再与独立、合规的大五量表校准。
-- CAPE-P15：模糊社会/知觉情境只用于探索性行为研究，不把游戏选择直接换算成 CAPE-P15 条目或临床标签。
-- PCL-5：游戏中的惊跳、回避或压力反应不能直接计算 PCL-5 分数或判断 PTSD；只能在合适研究方案中作为探索性关联信号。
-- LLM：可用于 NPC、受控剧情生成和自由文本 rubric 分类，但不直接输出未经验证的诊断或心理分数。
-- 家庭、依恋与发展理论：用于长期关系与剧情建模，不把童年、家庭或一次关系行为写成成年命运。
+- 大五：需要跨多个情境的重复行为特征，并与独立有效量表校准；
+- CAPE-P15：只允许探索模糊归因、证据检查、社会确认等候选行为，不把选择直接换算 CAPE 条目；
+- PCL-5：游戏中的惊跳、回避或压力反应不能直接计算 PCL-5 或判断 PTSD；
+- LLM：可用于 NPC、受控剧情生成或预注册 rubric 分类，不直接输出未经验证的诊断/心理分数；
+- 家庭、依恋与发展理论：用于长期剧情和关系动态，不把一次行为或童年历史写成成年命运。
 
-## 内容架构
+研究 telemetry 与游戏状态分离。默认：
 
-场景使用 Content Pack：
+```text
+behavioralResearchConsent = false
+sensitiveResearchConsent = false
+```
 
-- `campus-life`：普通大学日常，默认启用。
-- `social-friction`：失约、插队、同住冲突、小组分工不公等现实摩擦，默认启用。
-- `city-life`：聚餐、KTV、交通、实习等校外内容，目前已注册，等待地图/传送系统接入。
-- `life-course`：毕业、实习、第一份工作、长期关系、家庭照护、退休、生命回顾等长期人生内容，目前作为 planned pack。
-- `sensitive-research`：CAPE/PCL 相关探索性研究内容，默认关闭并要求独立研究方案。
+关闭研究记录时，游戏仍完整可玩。只有存在开放 research session 且参与者明确开启 behavioral research consent 时，才会写最小化 telemetry，例如地点转换、场景生命周期、活动 ID/地点/时长、对话方向和字符数。默认不把原始对话文本复制进 research telemetry，也不逐帧记录精确移动。
 
-场景可以通过 `lifeContext` 限定年龄、人生 season、章节、职业阶段、发展任务和关系类型。普通生活内容也可以明确使用 `researchUse: 'none'`，避免所有剧情都偷偷变成心理测试。
-
-详见：
-
-- [`docs/UNIVERSITY_CORE.md`](docs/UNIVERSITY_CORE.md)
-- [`docs/CONTENT_PACKS.md`](docs/CONTENT_PACKS.md)
-- [`docs/LIFE_COURSE_MODEL.md`](docs/LIFE_COURSE_MODEL.md)
+敏感研究还必须额外开启 `sensitiveResearchConsent`。
 
 ## 当前心理构念注册表
 
@@ -206,9 +237,7 @@ attachment.*
 decision.*
 ```
 
-构念注册表与正式问卷注册表分离，因此以后新增量表不需要重写场景系统，也不需要把人生模拟状态直接当成心理得分。
-
-`convex/life/signals.ts` 另行登记身份、家庭、关系、社会网络、适应/复原、意义等长期候选行为信号；这些同样不是正式量表得分。
+构念注册表与正式问卷注册表分离；新增量表不需要重写场景系统，也不能把人生模拟状态直接当作心理得分。
 
 ## 技术栈
 
@@ -225,24 +254,31 @@ npm install
 npm run dev
 ```
 
+单元测试：
+
+```bash
+npm test -- --runInBand
+```
+
 生产构建：
 
 ```bash
 npm run build
 ```
 
-当前 GitHub Actions CI 会执行：
+GitHub Actions CI 当前执行：
 
 ```bash
 npm ci
+npm test -- --runInBand
 npm run build
 ```
 
 ## LLM 配置
 
-AI-Uni 继承上游 AI Town 的 LLM provider 抽象。可以使用 Ollama，也可以配置 OpenAI、Together.ai 或 OpenAI-compatible API。
+AI-Uni 继承上游 AI Town 的 provider 抽象，可使用 Ollama、OpenAI、Together.ai 或 OpenAI-compatible API。
 
-OpenAI-compatible provider 使用的环境变量包括：
+OpenAI-compatible provider 的环境变量包括：
 
 ```bash
 LLM_API_URL
@@ -251,101 +287,73 @@ LLM_MODEL
 LLM_EMBEDDING_MODEL
 ```
 
-Embedding model 的维度必须与 `convex/util/llm.ts` 中配置一致。
-
-## 地图与素材
-
-第一张新地图应是一张**原创、通用的大学校园像素地图**：
-
-```text
-校园入口
-   ↓
-教学楼 ───── 图书馆
-   ↓            ↓
-校园餐厅 ─ 公共空间 ─ 学生活动中心
-   ↓            ↓
-住宿区 ─────── 运动场地
-```
-
-地图继续使用 Tiled → JSON → `data/convertMap.js` 的工作流。
-
-后期特定大学模板再单独替换地图和显示名称。
-
-AI-Uni 的 Web base path 为：
-
-```text
-/ai-uni
-```
-
-新的公开素材应使用类似：
-
-```text
-/ai-uni/assets/...
-```
-
-模板资产建议使用：
-
-```text
-/ai-uni/assets/templates/<template-id>/...
-```
+Embedding model 维度必须与 `convex/util/llm.ts` 中配置一致。
 
 ## 目录重点
 
 ```text
 convex/
 ├── aiTown/          # 上游 AI Town 游戏逻辑（继承命名）
-├── engine/          # 上游 simulation engine
-├── campus/          # 通用校园配置 + university profiles/templates
-├── world/           # 校内外地点注册
+├── engine/          # simulation engine
+├── campus/          # generic university profiles/templates
+├── world/           # 校内外地点 + zone 语义
 ├── content/         # Content Packs + 校验
-├── scenarios/       # 场景统一查询入口 + lifeContext 过滤
-├── life/            # 生命周期 / 家庭 / 关系 / 生态 / 长期人生状态
+├── scenarios/       # 场景选择 / runtime / NPC context / progress
+├── life/            # 生命周期 + first-week + daily activities
 ├── assessment/      # 构念 + 正式测验注册
 └── research/        # session / telemetry / calibration
 
 data/
-├── characters.ts
-├── gentle.js        # 当前 legacy starter map，之后替换 generic university map
-└── convertMap.js
+├── genericCampus.ts # 当前默认 generic_campus_v1
+├── npcProfiles.ts   # 后端轻量 NPC 语义资料
+├── characters.ts    # 前端角色/精灵资料
+├── gentle.js        # inherited legacy map
+└── convertMap.js    # Tiled JSON 转换工具
+
+assets/
+└── generic-campus-v1.png
 ```
 
-`convex/campus/` 当前包括：
+`convex/life/` 的关键文件：
 
 ```text
-config.ts             通用大学功能地点
-profiles.ts           UniversityProfile 类型与默认通用大学
-registry.ts           模板注册表
-templates/bjtu.ts     可选 BJTU-inspired 模板示例
-```
-
-`convex/life/` 当前包含：
-
-```text
-types.ts         生命周期领域类型
-model.ts         默认状态与长期机制
-development.ts   发展阶段 + 长期章节
-firstWeek.ts     第一章 7 天
-transitions.ts   跨章节 / 跨人生阶段默认过渡
-schema.ts        持久化表
-state.ts         生命周期状态 API
-theories.ts      理论目录与误用边界
-signals.ts       长期候选行为信号
-influence.ts     有上限的概率影响机制
+firstWeek.ts          第一章 7 天定义
+firstWeekProgress.ts  首周完成门槛
+activities.ts         普通校园自由活动
+ day.ts                活动执行 + 日结
+state.ts              长期人生状态 API
+transitions.ts        跨章节 / 跨人生阶段过渡
+signals.ts            长期候选行为信号
+influence.ts          有上限的概率影响机制
 ```
 
 ## 安全与研究要求
 
 正式用于参与者研究前，应根据具体研究方案完成：
 
-- 伦理审批 / IRB（如适用）
-- 知情同意
-- 数据最小化
-- 对话数据留存与去标识化规则
-- 敏感场景 opt-out
-- 风险处置与人工转介流程
-- 目标语言量表版本、授权和效度核对
+- 伦理审批 / IRB（如适用）；
+- 知情同意；
+- 数据最小化；
+- 对话数据留存与去标识化规则；
+- 敏感场景 opt-out；
+- 风险处置与人工转介流程；
+- 目标语言量表版本、授权和效度核对。
 
 AI-Uni 当前是研究原型，不提供医学诊断或治疗建议。
+
+## 下一步
+
+当前主线已从“搭架构”进入“提高可玩性”：
+
+```text
+地图上的可见交互提示 / object hotspots
+→ 更丰富的校园对象交互
+→ 校外城市与交通空间
+→ 更完整的大一到毕业内容
+→ 职业、关系、家庭、中晚年章节
+```
+
+研究者 dashboard/export、正式 questionnaire delivery、production consent UI 和经验证的 behavioral-feature model 仍属于后续研究基础设施。
 
 ## License / upstream
 
