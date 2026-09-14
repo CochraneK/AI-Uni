@@ -58,8 +58,7 @@ export default function ScheduledCommitmentsPanel(props: {
             unresolved &&
             (commitment.temporalState === 'arrival_window' ||
               commitment.temporalState === 'late_window');
-          const checkInDisabled =
-            runningId !== undefined || !canArrive || !isHere || Boolean(activeScenario);
+          const checkInDisabled = runningId !== undefined || !canArrive || !isHere;
 
           return (
             <div
@@ -84,7 +83,7 @@ export default function ScheduledCommitmentsPanel(props: {
                   : statusText[commitment.status] ?? commitment.status}
                 {unresolved && canArrive && !isHere ? ` · 先到${commitmentLocationName}` : ''}
                 {unresolved && canArrive && isHere && activeScenario
-                  ? ' · 先处理当前生活事件'
+                  ? ' · 到场会优先收束当前随机事件'
                   : ''}
               </div>
 
@@ -112,8 +111,6 @@ export default function ScheduledCommitmentsPanel(props: {
                             setMessage(`${commitment.title} 已经结束，本次记录为未参加。`);
                           } else if (result.reason === 'wrong_location') {
                             setMessage(`先到 ${commitmentLocationName} 再到场。`);
-                          } else if (result.reason === 'active_scenario') {
-                            setMessage('先处理当前生活事件，再参加固定安排。');
                           } else {
                             setMessage('这个安排现在无法到场。');
                           }
