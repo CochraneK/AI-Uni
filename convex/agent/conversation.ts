@@ -369,8 +369,17 @@ export const queryPromptData = internalQuery({
           .first();
         if (runtime?.activeScenarioId) {
           const scenario = getScenario(runtime.activeScenarioId);
-          if (scenario) {
-            scenarioContext = buildScenarioNpcContext(scenario, npcPlayer.id);
+          const activeRun = runtime.activeRunId ? await ctx.db.get(runtime.activeRunId) : undefined;
+          const assignment = activeRun?.npcAssignments?.find(
+            (candidate) => candidate.playerId === npcPlayer.id,
+          );
+          const isLegacyUnassignedRun = activeRun && activeRun.npcAssignments === undefined;
+          if (scenario && (assignment || isLegacyUnassignedRun)) {
+            scenarioContext = buildScenarioNpcContext(
+              scenario,
+              npcPlayer.id,
+              assignment?.role,
+            );
           }
         }
       }
