@@ -90,6 +90,11 @@ export default function ScenarioStatusPanel(props: {
             setDayEndMessage(undefined);
             void endFirstWeekDay({ profileId: profile._id })
               .then((result) => {
+                if (!result.advanced) {
+                  const missing = result.readiness.missing.join('；');
+                  setDayEndMessage(`${result.closingBeat}${missing ? ` ${missing}。` : ''}`);
+                  return;
+                }
                 setDayEndMessage(
                   result.firstWeekCompleted
                     ? `${result.closingBeat} 第一章完成，接下来进入大一阶段。`
