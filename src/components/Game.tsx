@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import PixiGame from './PixiGame.tsx';
+import PixiGame, { type CampusNavigationRequest } from './PixiGame.tsx';
 
 import { useElementSize } from 'usehooks-ts';
 import { Stage } from '@pixi/react';
@@ -25,6 +25,7 @@ export default function Game() {
     id: GameId<'players'>;
   }>();
   const [focusedActivityId, setFocusedActivityId] = useState<string>();
+  const [navigationRequest, setNavigationRequest] = useState<CampusNavigationRequest>();
   const [gameWrapperRef, { width, height }] = useElementSize();
 
   const worldStatus = useQuery(api.world.defaultWorldStatus);
@@ -76,6 +77,7 @@ https://github.com/michalochman/react-pixi-fiber/issues/145#issuecomment-5315492
                     historicalTime={historicalTime}
                     humanPlayerId={humanPlayerId}
                     scenarioRuntime={scenarioRuntime}
+                    navigationRequest={navigationRequest}
                     onFocusActivity={setFocusedActivityId}
                     setSelectedElement={setSelectedElement}
                   />
@@ -90,7 +92,12 @@ https://github.com/michalochman/react-pixi-fiber/issues/145#issuecomment-5315492
           ref={scrollViewRef}
         >
           <CampusTravelStatus scenarioRuntime={scenarioRuntime} />
-          <ScheduledCommitmentsPanel scenarioRuntime={scenarioRuntime} />
+          <ScheduledCommitmentsPanel
+            scenarioRuntime={scenarioRuntime}
+            onNavigateToLocation={(locationId) =>
+              setNavigationRequest({ locationId, requestId: Date.now() })
+            }
+          />
           <ScenarioStatusPanel
             humanPlayerId={humanPlayerId}
             scenarioRuntime={scenarioRuntime}
