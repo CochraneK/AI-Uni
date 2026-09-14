@@ -20,28 +20,27 @@ jobs:
     env:
       CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
     steps:
-      - name: Explain missing Convex deploy key
-        if: ${{ env.CONVEX_DEPLOY_KEY == '' }}
-        run: |
-          echo "GitHub Pages publishing is prepared but currently skipped."
-          echo "Create the Convex project, generate a production deploy key, and save it as repository secret CONVEX_DEPLOY_KEY."
-
       - name: Checkout
-        if: ${{ env.CONVEX_DEPLOY_KEY != '' }}
         uses: actions/checkout@v4
 
       - name: Setup Node
-        if: ${{ env.CONVEX_DEPLOY_KEY != '' }}
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
       - name: Install dependencies
-        if: ${{ env.CONVEX_DEPLOY_KEY != '' }}
         run: npm ci
 
-      - name: Deploy Convex and build AI-Uni
+      - name: Build zero-setup browser demo
+        if: ${{ env.CONVEX_DEPLOY_KEY == '' }}
+        env:
+          VITE_DEMO_MODE: '1'
+        run: |
+          echo "No CONVEX_DEPLOY_KEY yet; publishing the standalone browser demo."
+          npm run build
+
+      - name: Deploy Convex and build full online AI-Uni
         if: ${{ env.CONVEX_DEPLOY_KEY != '' }}
         run: npx convex deploy --cmd "npm run build" --cmd-url-env-var-name VITE_CONVEX_URL
 
@@ -50,11 +49,9 @@ jobs:
         run: npx convex run init --prod
 
       - name: Keep GitHub Pages from running Jekyll
-        if: ${{ env.CONVEX_DEPLOY_KEY != '' }}
         run: touch dist/.nojekyll
 
       - name: Publish gh-pages branch
-        if: ${{ env.CONVEX_DEPLOY_KEY != '' }}
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
