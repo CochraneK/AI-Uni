@@ -38,15 +38,15 @@ const makeContext = (startMinute = 8 * 60) => {
   ]);
 
   const db = {
-    get: jest.fn(async (id: string) => documents.get(id) ?? null),
-    patch: jest.fn(async (id: string, patch: any) => {
+    get: async (id: string) => documents.get(id) ?? null,
+    patch: async (id: string, patch: any) => {
       const current = documents.get(id);
       if (!current) throw new Error(`Missing document ${id}`);
       documents.set(id, { ...current, ...patch });
-    }),
+    },
   };
 
-  return { ctx: { db }, documents, db };
+  return { ctx: { db }, documents };
 };
 
 describe('completeScenarioRun', () => {
