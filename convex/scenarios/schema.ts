@@ -42,6 +42,8 @@ export const scenarioTables = {
         }),
       ),
     ),
+    humanMessageCount: v.optional(v.number()),
+    interactedNpcIds: v.optional(v.array(playerId)),
   })
     .index('byRuntimeTime', ['runtimeId', 'startedAt'])
     .index('byProfileScenario', ['profileId', 'scenarioId']),
