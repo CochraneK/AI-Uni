@@ -1,4 +1,5 @@
 import type { ScenarioDefinition } from '../content/types';
+import { parseClockTime } from '../campus/schedule';
 import type { ScenarioLifeRuntimeContext } from './lifeFilter';
 import { scenarioMatchesLifeContext } from './lifeFilter';
 import { allScenarios, getContentPack } from './registry';
@@ -12,6 +13,8 @@ export type ScenarioSelectionContext = {
   recentScenarioIds: string[];
   completedScenarioIds?: string[];
   sensitiveResearchConsent: boolean;
+  /** Current local game-clock minute when time-window rules should apply. */
+  gameMinute?: number;
   /** Remaining playable minutes in the current game day. */
   remainingMinutes?: number;
   seed: string;
@@ -43,6 +46,20 @@ const safetyWeight = (scenario: ScenarioDefinition) => {
   if (scenario.safetyLevel === 'ordinary') return 1;
   if (scenario.safetyLevel === 'mild_stress') return 0.75;
   return 0.35;
+};
+
+const fitsAuthoredTimeWindow = (
+  scenario: ScenarioDefinition,
+  gameMinute: number | undefined,
+) => {
+  if (!scenario.timeWindows || gameMinute === undefined) return true;
+
+  return scenario.timeWindows.some((window) => {
+    const start = parseClockTime(window.start);
+    const end = parseClockTime(window.end);
+    if (start === undefined || end === undefined) return false;
+    return gameMinute >= start && gameMinute + scenario.estimatedMinutes <= end;
+  });
 };
 
 export const scenarioCanRun = (
@@ -79,6 +96,11 @@ export const scenarioCanRun = (
   ) {
     return false;
   }
+
+  // Optional authored windows model ordinary schedule realism (breakfast,
+  // classes, evening roommate talk, etc.). They never derive from research or
+  // hidden psychological metadata.
+  if (!fitsAuthoredTimeWindow(scenario, context.gameMinute)) return false;
 
   return scenarioMatchesLifeContext(scenario, context.life);
 };
