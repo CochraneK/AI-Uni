@@ -3,6 +3,7 @@ import { campusLifePack } from '../content/packs/campusLife';
 import { socialFrictionPack } from '../content/packs/socialFriction';
 import { cityLifePack } from '../content/packs/cityLife';
 import { sensitiveResearchPack } from '../content/packs/sensitiveResearch';
+import { assertValidContentPacks, validateContentPacks } from '../content/validation';
 
 export const contentPacks: ContentPack[] = [
   campusLifePack,
@@ -10,6 +11,11 @@ export const contentPacks: ContentPack[] = [
   cityLifePack,
   sensitiveResearchPack,
 ];
+
+// Fail fast when content authors introduce duplicate IDs, unknown constructs/locations,
+// or accidentally enable sensitive research content by default.
+assertValidContentPacks(contentPacks);
+export const contentValidationIssues = validateContentPacks(contentPacks);
 
 export const allScenarios: ScenarioDefinition[] = contentPacks.flatMap((pack) => pack.scenarios);
 
