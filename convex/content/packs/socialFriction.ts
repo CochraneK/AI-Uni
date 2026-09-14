@@ -14,6 +14,7 @@ export const socialFrictionPack = defineContentPack({
       location: 'dormitory',
       ordinaryGoal: '和室友商量熄灯、空调与清洁安排。',
       setup: '两名室友的作息不同，其中一人说话比较强势，大家需要共同决定宿舍规则。',
+      estimatedMinutes: 35,
       npcRoles: ['roommate_early', 'roommate_late'],
       hiddenTargets: ['big5.agreeableness', 'big5.conscientiousness', 'emotion.regulation'],
       safetyLevel: 'ordinary',
@@ -36,6 +37,7 @@ export const socialFrictionPack = defineContentPack({
       location: 'cafeteria',
       ordinaryGoal: '和同学吃饭并处理课程群里的新消息。',
       setup: '课程群出现一句没有点名的抱怨，几位同学对它在说谁有不同看法。',
+      estimatedMinutes: 20,
       npcRoles: ['friend', 'classmate'],
       hiddenTargets: [
         'cape.persecutory_ideation',
@@ -62,6 +64,7 @@ export const socialFrictionPack = defineContentPack({
       location: 'library',
       ordinaryGoal: '完成小组汇报并确认最终署名与分工说明。',
       setup: '一名贡献较少的组员在群里暗示自己承担了大部分工作，其他人反应不一。',
+      estimatedMinutes: 40,
       npcRoles: ['teammate_dominant', 'teammate_quiet', 'classmate'],
       hiddenTargets: [
         'big5.agreeableness',
@@ -89,6 +92,7 @@ export const socialFrictionPack = defineContentPack({
       location: 'cafeteria',
       ordinaryGoal: '买到午饭并按原计划和朋友汇合。',
       setup: '排队时一名认识但不熟的同学直接站到前面，还笑着说“帮我占一下呗”。',
+      estimatedMinutes: 15,
       npcRoles: ['pushy_classmate', 'friend', 'student_bystander'],
       hiddenTargets: ['big5.agreeableness', 'emotion.regulation', 'social.trust'],
       safetyLevel: 'ordinary',
@@ -111,6 +115,7 @@ export const socialFrictionPack = defineContentPack({
       location: 'dormitory',
       ordinaryGoal: '安排自己的晚上并处理朋友发来的消息。',
       setup: '玩家从朋友圈看到几个熟悉同学正在聚餐，之前没有人邀请自己；稍后其中一人私聊问明天是否一起上课。',
+      estimatedMinutes: 25,
       npcRoles: ['friend', 'classmate'],
       hiddenTargets: [
         'social.rejection_sensitivity',
@@ -138,6 +143,7 @@ export const socialFrictionPack = defineContentPack({
       location: 'dormitory',
       ordinaryGoal: '拿回自己明天要用的物品。',
       setup: '同学几天前借走一件常用物品，已经两次说“晚上还”，但现在仍没送回来。',
+      estimatedMinutes: 20,
       npcRoles: ['unreliable_classmate', 'roommate'],
       hiddenTargets: ['social.trust', 'big5.agreeableness', 'emotion.regulation'],
       safetyLevel: 'ordinary',
