@@ -7,6 +7,7 @@ import PixiViewport from './PixiViewport.tsx';
 import { Viewport } from 'pixi-viewport';
 import { Id } from '../../convex/_generated/dataModel';
 import type { GameId } from '../../convex/aiTown/ids';
+import type { CampusLocationId } from '../../convex/campus/config';
 import { getUniversityScheduleMoment } from '../../convex/campus/schedule';
 import { getDayClock, makeDayClockKey } from '../../convex/life/dayClock';
 import { useSendInput } from '../hooks/sendInput.ts';
@@ -91,6 +92,7 @@ export const PixiGame = (props: {
   const recommendedLocationId = dayClock
     ? getUniversityScheduleMoment(dayClock.minute).current?.location
     : undefined;
+  const currentLocationId = props.scenarioRuntime.locationId as CampusLocationId | undefined;
 
   // Zoom on the user’s avatar when it is created.
   useEffect(() => {
@@ -120,8 +122,9 @@ export const PixiGame = (props: {
       {showActivityHotspots && (
         <CampusActivityHotspots
           tileDim={tileDim}
+          currentLocationId={currentLocationId}
           recommendedLocationId={recommendedLocationId}
-          onNavigate={(_locationId, destination) => {
+          onNavigate={(_interactable, destination) => {
             void navigateTo(destination);
           }}
         />
