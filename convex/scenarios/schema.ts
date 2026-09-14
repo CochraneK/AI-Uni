@@ -1,5 +1,6 @@
 import { defineTable } from 'convex/server';
 import { v } from 'convex/values';
+import { playerId } from '../aiTown/ids';
 
 export const scenarioTables = {
   scenarioRuntimeStates: defineTable({
@@ -33,6 +34,14 @@ export const scenarioTables = {
     selectionIndex: v.number(),
     selectionReasons: v.optional(v.array(v.string())),
     candidateCount: v.optional(v.number()),
+    npcAssignments: v.optional(
+      v.array(
+        v.object({
+          playerId,
+          role: v.string(),
+        }),
+      ),
+    ),
   })
     .index('byRuntimeTime', ['runtimeId', 'startedAt'])
     .index('byProfileScenario', ['profileId', 'scenarioId']),
