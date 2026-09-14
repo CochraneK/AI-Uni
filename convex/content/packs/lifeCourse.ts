@@ -11,7 +11,7 @@ export const lifeCoursePack = defineContentPack({
       id: 'graduation_last_walk_01',
       title: '毕业前最后一次走过校园',
       packId: 'life-course',
-      location: 'south_gate',
+      location: 'campus_gate',
       ordinaryGoal: '和熟悉的人告别，决定毕业后保持哪些联系。',
       setup: '毕业手续基本完成，几位相处多年的同学准备离校。有人约你一起再走一遍校园。',
       npcRoles: ['close_friend', 'classmate', 'roommate'],
