@@ -80,4 +80,34 @@ describe('scenario controller', () => {
   test('returns no runnable scene when the game day has no time left', () => {
     expect(buildScenarioCandidates(context({ remainingMinutes: 0 }))).toEqual([]);
   });
+
+  test('allows breakfast while its full duration fits the authored breakfast window', () => {
+    const breakfast = scenario('breakfast_routine_01');
+    expect(
+      scenarioCanRun(
+        breakfast,
+        context({ gameMinute: 9 * 60, remainingMinutes: 14 * 60 }),
+      ),
+    ).toBe(true);
+  });
+
+  test('blocks breakfast when it would finish after the authored breakfast window', () => {
+    const breakfast = scenario('breakfast_routine_01');
+    expect(
+      scenarioCanRun(
+        breakfast,
+        context({ gameMinute: 9 * 60 + 45, remainingMinutes: 13 * 60 + 15 }),
+      ),
+    ).toBe(false);
+  });
+
+  test('blocks breakfast outside its authored time of day', () => {
+    const breakfast = scenario('breakfast_routine_01');
+    expect(
+      scenarioCanRun(
+        breakfast,
+        context({ gameMinute: 12 * 60, remainingMinutes: 11 * 60 }),
+      ),
+    ).toBe(false);
+  });
 });
