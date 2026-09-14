@@ -10,6 +10,7 @@ import type { GameId } from '../../convex/aiTown/ids';
 import type { CampusLocationId } from '../../convex/campus/config';
 import { getUniversityScheduleMoment } from '../../convex/campus/schedule';
 import { getDayClock, makeDayClockKey } from '../../convex/life/dayClock';
+import { zoneAnchors } from '../../data/genericCampus';
 import { useSendInput } from '../hooks/sendInput.ts';
 import { toastOnError } from '../toasts.ts';
 import { DebugPath } from './DebugPath.tsx';
@@ -18,6 +19,11 @@ import CampusActivityHotspots from './CampusActivityHotspots.tsx';
 import { SHOW_DEBUG_UI } from './Game.tsx';
 import { ServerGame } from '../hooks/serverGame.ts';
 import type { ScenarioRuntimeView } from '../hooks/useScenarioRuntime.ts';
+
+export type CampusNavigationRequest = {
+  locationId: CampusLocationId;
+  requestId: number;
+};
 
 export const PixiGame = (props: {
   worldId: Id<'worlds'>;
@@ -28,6 +34,7 @@ export const PixiGame = (props: {
   height: number;
   humanPlayerId?: GameId<'players'>;
   scenarioRuntime: ScenarioRuntimeView;
+  navigationRequest?: CampusNavigationRequest;
   onFocusActivity: (activityId: string) => void;
   setSelectedElement: SelectElement;
 }) => {
@@ -53,9 +60,7 @@ export const PixiGame = (props: {
     if (!props.humanPlayerId) return;
     setLastDestination({ t: Date.now(), ...destination });
     console.log(`Moving to ${JSON.stringify(destination)}`);
-    await toastOnError(
-      moveTo({ playerId: props.humanPlayerId, destination }),
-    );
+    await toastOnError(moveTo({ playerId: props.humanPlayerId, destination }));
   };
 
   const onMapPointerUp = async (e: any) => {
@@ -105,6 +110,21 @@ export const PixiGame = (props: {
       scale: 1.5,
     });
   }, [props.humanPlayerId]);
+
+  // Fixed commitments and future calendar items can ask the map to navigate to a
+  // semantic campus place. For generic_campus_v1 we reuse the same tested zone
+  // anchors used by map regression tests. University templates can later supply
+  // their own location anchors through the same semantic contract.
+  useEffect(() => {
+    const request = props.navigationRequest;
+    if (!request || !isGenericCampus || !props.humanPlayerId) return;
+    const anchor = zoneAnchors[request.locationId as keyof typeof zoneAnchors];
+    if (!anchor) return;
+    void navigateTo(anchor);
+    // requestId is intentionally the trigger; repeated requests to the same
+    // location should still be able to issue a fresh move command.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.navigationRequest?.requestId]);
 
   return (
     <PixiViewport
