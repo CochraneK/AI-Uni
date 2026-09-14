@@ -4,8 +4,13 @@ import { firstWeekEndCondition, universityFirstWeek } from './firstWeek';
 import {
   evaluateFirstWeekReadiness,
   markFirstWeekDayCompleted,
+  recordFirstWeekOrdinaryActivity,
 } from './firstWeekProgress';
+import { campusActivityRules, getCampusActivity } from './activities';
 import { writeTelemetryForProfile } from '../research/telemetry';
+
+const activityDayKey = (profile: any) =>
+  `${profile.chapterId}:${profile.chapterUnit}:${profile.totalGameDays}`;
 
 export const getFirstWeekStatus = query({
   args: {
@@ -23,6 +28,127 @@ export const getFirstWeekStatus = query({
       minimumDistinctNpcInteractions: firstWeekEndCondition.minimumDistinctNpcInteractions,
       requireOrdinaryLifeCompletion: firstWeekEndCondition.requireOrdinaryLifeCompletion,
       ...progress,
+    };
+  },
+});
+
+export const performCampusActivity = mutation({
+  args: {
+    profileId: v.id('lifeProfiles'),
+    activityId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const profile = await ctx.db.get(args.profileId);
+    if (!profile) throw new Error('Life profile not found');
+
+    const activity = getCampusActivity(args.activityId);
+    if (!activity) throw new Error(`Unknown campus activity: ${args.activityId}`);
+
+    const runtime = await ctx.db
+      .query('scenarioRuntimeStates')
+      .withIndex('byProfile', (q) => q.eq('profileId', args.profileId))
+      .first();
+
+    if (!runtime || runtime.activeLocationId !== activity.locationId) {
+      return {
+        performed: false,
+        reason: 'wrong_location' as const,
+        message: '先走到这个活动所在的区域，再开始做这件事。',
+      };
+    }
+    if (runtime.activeScenarioId) {
+      return {
+        performed: false,
+        reason: 'active_scenario' as const,
+        message: '先把当前生活事件处理完，再安排自由活动。',
+      };
+    }
+
+    const previousState = profile.state && typeof profile.state === 'object' ? profile.state : {};
+    const dayKey = activityDayKey(profile);
+    const existingDaily =
+      previousState.campusActivities?.dayKey === dayKey
+        ? previousState.campusActivities
+        : undefined;
+    const completedIds: string[] = Array.isArray(existingDaily?.completedIds)
+      ? existingDaily.completedIds
+      : [];
+
+    if (!campusActivityRules.repeatSameActivityPerDay && completedIds.includes(activity.id)) {
+      return {
+        performed: false,
+        reason: 'already_completed' as const,
+        message: '这件事今天已经做过了。换个地方或换件小事试试。',
+      };
+    }
+    if (completedIds.length >= campusActivityRules.maxDistinctActivitiesPerDay) {
+      return {
+        performed: false,
+        reason: 'daily_limit' as const,
+        message: '今天的自由活动已经很充实了。可以找人聊天、处理事件，或者结束今天。',
+      };
+    }
+
+    const now = Date.now();
+    const nextCompletedIds = [...completedIds, activity.id];
+    await ctx.db.patch(args.profileId, {
+      state: {
+        ...previousState,
+        campusActivities: {
+          dayKey,
+          completedIds: nextCompletedIds,
+          lastActivityId: activity.id,
+          lastActivityAt: now,
+        },
+      },
+      updatedAt: now,
+    });
+
+    await ctx.db.insert('lifeEvents', {
+      profileId: args.profileId,
+      timestamp: now,
+      gameDay: profile.totalGameDays,
+      age: profile.age,
+      chapterId: profile.chapterId,
+      category: 'daily_life',
+      eventKey: `campus_activity:${activity.id}`,
+      title: activity.title,
+      turningPoint: 'none',
+      payload: {
+        activityId: activity.id,
+        locationId: activity.locationId,
+        estimatedMinutes: activity.estimatedMinutes,
+        tags: activity.tags,
+      },
+    });
+
+    if (campusActivityRules.countsAsOrdinaryLifeExperience) {
+      await recordFirstWeekOrdinaryActivity(ctx, args.profileId, activity.id);
+    }
+
+    await writeTelemetryForProfile(ctx, args.profileId, {
+      eventType: 'interaction',
+      action: 'campus_activity',
+      locationId: activity.locationId,
+      payload: {
+        activityId: activity.id,
+        estimatedMinutes: activity.estimatedMinutes,
+      },
+    });
+
+    const readiness =
+      profile.chapterId === 'university_first_week'
+        ? await evaluateFirstWeekReadiness(ctx, args.profileId)
+        : null;
+
+    return {
+      performed: true,
+      reason: 'completed' as const,
+      message: activity.completionText,
+      activityId: activity.id,
+      completedToday: nextCompletedIds.length,
+      dailyLimit: campusActivityRules.maxDistinctActivitiesPerDay,
+      readiness,
     };
   },
 });
