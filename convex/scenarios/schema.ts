@@ -31,6 +31,10 @@ export const scenarioTables = {
     startedAt: v.number(),
     endedAt: v.optional(v.number()),
     outcome: v.optional(v.string()),
+    // Optional for compatibility with runs created before the day-clock layer.
+    startedAtGameMinute: v.optional(v.number()),
+    endedAtGameMinute: v.optional(v.number()),
+    estimatedMinutes: v.optional(v.number()),
     selectionIndex: v.number(),
     selectionReasons: v.optional(v.array(v.string())),
     candidateCount: v.optional(v.number()),
