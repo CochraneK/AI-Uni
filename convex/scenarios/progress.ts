@@ -1,8 +1,5 @@
 import { getScenario } from './registry';
-import { recordFirstWeekScenarioCompletion } from '../life/firstWeekProgress';
-import { writeTelemetryForProfile } from '../research/telemetry';
-
-const MAX_COMPLETED_SCENARIOS = 256;
+import { completeScenarioRun } from './completion';
 
 const uniqueAppend = (items: string[], value: string) =>
   items.includes(value) ? items : [...items, value];
@@ -65,37 +62,10 @@ export const recordScenarioDialogueProgress = async (
     };
   }
 
-  const now = Date.now();
-  const outcome = 'auto_completed_dialogue';
-  await ctx.db.patch(run._id, {
-    endedAt: now,
-    outcome,
-  });
-
-  const completedScenarioIds = uniqueAppend(
-    runtime.completedScenarioIds,
-    runtime.activeScenarioId,
-  ).slice(-MAX_COMPLETED_SCENARIOS);
-  await ctx.db.patch(runtime._id, {
-    activeScenarioId: undefined,
-    activeRunId: undefined,
-    completedScenarioIds,
-    updatedAt: now,
-  });
-
-  await recordFirstWeekScenarioCompletion(
-    ctx,
-    profile._id,
-    scenario.id,
-    scenario.researchUse === 'none',
-  );
-  await writeTelemetryForProfile(ctx, profile._id, {
-    eventType: 'scene_exit',
-    action: outcome,
-    sceneId: scenario.id,
-    locationId: runtime.activeLocationId,
+  const completion = await completeScenarioRun(ctx, runtime._id, {
+    outcome: 'auto_completed_dialogue',
     npcId,
-    payload: {
+    telemetryPayload: {
       humanMessageCount,
       completionThreshold: threshold,
     },
@@ -103,9 +73,11 @@ export const recordScenarioDialogueProgress = async (
 
   return {
     tracked: true,
-    completed: true,
+    completed: completion.completed,
     humanMessageCount,
     threshold,
-    scenarioId: scenario.id,
+    scenarioId: completion.scenarioId,
+    completionReason: completion.reason,
+    gameTime: completion.completed ? completion.gameTime : completion.gameTime,
   };
 };
