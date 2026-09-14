@@ -297,6 +297,7 @@ export const enterScenarioLocation = mutation({
       recentScenarioIds: runtime.recentScenarioIds,
       completedScenarioIds: runtime.completedScenarioIds,
       sensitiveResearchConsent: runtime.sensitiveResearchConsent,
+      gameMinute: clock.minute,
       remainingMinutes,
       seed: runtime.seed,
       selectionIndex: runtime.selectionIndex,
