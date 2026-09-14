@@ -21,6 +21,7 @@ export const campusLifePack = defineContentPack({
       observableFeatures: [],
       tags: ['routine', 'food', 'pure-life'],
       enabledByDefault: true,
+      lifeContext: { firstWeekDays: [1, 2, 5] },
     },
     {
       id: 'library_browse_01',
@@ -36,6 +37,7 @@ export const campusLifePack = defineContentPack({
       observableFeatures: [],
       tags: ['routine', 'study', 'pure-life'],
       enabledByDefault: true,
+      lifeContext: { firstWeekDays: [2, 3, 7] },
     },
     {
       id: 'campus_walk_01',
@@ -51,6 +53,7 @@ export const campusLifePack = defineContentPack({
       observableFeatures: [],
       tags: ['leisure', 'routine', 'pure-life'],
       enabledByDefault: true,
+      lifeContext: { firstWeekDays: [1, 4, 7] },
     },
     {
       id: 'dorm_room_reset_01',
@@ -66,6 +69,7 @@ export const campusLifePack = defineContentPack({
       observableFeatures: [],
       tags: ['dormitory', 'routine', 'pure-life'],
       enabledByDefault: true,
+      lifeContext: { firstWeekDays: [1, 5, 7] },
     },
     {
       id: 'casual_sports_01',
@@ -81,6 +85,7 @@ export const campusLifePack = defineContentPack({
       observableFeatures: [],
       tags: ['sports', 'leisure', 'pure-life'],
       enabledByDefault: true,
+      lifeContext: { firstWeekDays: [4, 6] },
     },
     {
       id: 'meet_at_gate_01',
@@ -96,6 +101,7 @@ export const campusLifePack = defineContentPack({
       observableFeatures: [],
       tags: ['arrival', 'social', 'pure-life'],
       enabledByDefault: true,
+      lifeContext: { firstWeekDays: [1, 6] },
     },
     {
       id: 'club_recruitment_01',
@@ -116,6 +122,7 @@ export const campusLifePack = defineContentPack({
       ],
       tags: ['social', 'exploration', 'clubs'],
       enabledByDefault: true,
+      lifeContext: { firstWeekDays: [4] },
     },
     {
       id: 'group_project_01',
@@ -141,6 +148,7 @@ export const campusLifePack = defineContentPack({
       ],
       tags: ['study', 'cooperation', 'planning'],
       enabledByDefault: true,
+      lifeContext: { firstWeekDays: [3] },
     },
     {
       id: 'schedule_change_01',
@@ -166,6 +174,7 @@ export const campusLifePack = defineContentPack({
       ],
       tags: ['study', 'uncertainty', 'time-pressure'],
       enabledByDefault: true,
+      lifeContext: { firstWeekDays: [2] },
     },
     {
       id: 'presentation_reminder_01',
@@ -187,6 +196,7 @@ export const campusLifePack = defineContentPack({
       ],
       tags: ['study', 'evaluation', 'time-pressure'],
       enabledByDefault: true,
+      lifeContext: { firstWeekDays: [3, 5] },
     },
   ],
 });
