@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
@@ -6,7 +6,13 @@ import type { GameId } from '../../convex/aiTown/ids';
 import { getUniversityProfile } from '../../convex/campus/registry';
 import { getScenario } from '../../convex/scenarios/registry';
 import { findLocationAtPosition } from '../../convex/world/zones';
+import type { WorldLocationId } from '../../convex/world/locations';
 import type { ServerGame } from './serverGame';
+
+export type CampusTravelFeedback = {
+  locationId: WorldLocationId;
+  travelMinutes: number;
+};
 
 export function useScenarioRuntime(args: {
   worldId?: Id<'worlds'>;
@@ -29,6 +35,7 @@ export function useScenarioRuntime(args: {
     api.scenarios.runtime.getScenarioRuntime,
     profile ? { profileId: profile._id } : 'skip',
   );
+  const [lastTravel, setLastTravel] = useState<CampusTravelFeedback>();
 
   const creatingProfile = useRef(false);
   useEffect(() => {
@@ -91,9 +98,18 @@ export function useScenarioRuntime(args: {
     lastSyncedLocation.current = locationId;
 
     if (locationId) {
-      void enterScenarioLocation({ runtimeId: runtime._id, locationId }).catch((error) =>
-        console.error('Failed to enter AI-Uni scenario location', error),
-      );
+      void enterScenarioLocation({ runtimeId: runtime._id, locationId })
+        .then((result) => {
+          if (result.changed && result.travelMinutes > 0) {
+            setLastTravel({
+              locationId,
+              travelMinutes: result.travelMinutes,
+            });
+          }
+        })
+        .catch((error) =>
+          console.error('Failed to enter AI-Uni scenario location', error),
+        );
     } else {
       void leaveScenarioLocation({ runtimeId: runtime._id }).catch((error) =>
         console.error('Failed to leave AI-Uni scenario location', error),
@@ -112,6 +128,7 @@ export function useScenarioRuntime(args: {
     locationId,
     activeScenario,
     universityProfile,
+    lastTravel,
   };
 }
 
