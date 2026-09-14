@@ -108,15 +108,13 @@ chapterId / chapterUnit
 kind
 locationId
 startMinute / endMinute
-aattendanceRequired
+attendanceRequired
 graceMinutes
 status
 arrivedAtMinute?
 resolvedAt?
 metadata?
 ```
-
-(Implementation field name is `attendanceRequired`; the list above describes the conceptual record.)
 
 Indexes support stable per-profile keys, current chapter/day lookup and status lookup.
 
