@@ -19,6 +19,13 @@ export const scenarioMatchesLifeContext = (
   if (rule.seasons && !rule.seasons.includes(profile.season)) return false;
   if (rule.chapterIds && !rule.chapterIds.includes(profile.chapterId)) return false;
   if (rule.chapterUnits && !rule.chapterUnits.includes(profile.chapterUnit)) return false;
+  if (
+    profile.chapterId === 'university_first_week' &&
+    rule.firstWeekDays &&
+    !rule.firstWeekDays.includes(profile.chapterUnit)
+  ) {
+    return false;
+  }
   if (rule.careerStages && !rule.careerStages.includes(profile.careerStage)) return false;
   if (rule.minimumAge !== undefined && profile.age < rule.minimumAge) return false;
   if (rule.maximumAge !== undefined && profile.age > rule.maximumAge) return false;
