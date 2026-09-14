@@ -27,6 +27,7 @@ const context = (
   recentScenarioIds: [],
   completedScenarioIds: [],
   sensitiveResearchConsent: false,
+  remainingMinutes: 15 * 60,
   seed: 'test-seed',
   selectionIndex: 0,
   ...overrides,
@@ -65,5 +66,18 @@ describe('scenario controller', () => {
     expect(ordinary!.weight).toBeGreaterThan(
       Math.max(...research.map((candidate) => candidate.weight)),
     );
+  });
+
+  test('excludes scenes that cannot finish before the day cutoff', () => {
+    const candidates = buildScenarioCandidates(context({ remainingMinutes: 20 }));
+
+    expect(candidates.every((candidate) => candidate.scenario.estimatedMinutes <= 20)).toBe(true);
+    expect(
+      candidates.some((candidate) => candidate.scenario.id === 'breakfast_routine_01'),
+    ).toBe(false);
+  });
+
+  test('returns no runnable scene when the game day has no time left', () => {
+    expect(buildScenarioCandidates(context({ remainingMinutes: 0 }))).toEqual([]);
   });
 });
