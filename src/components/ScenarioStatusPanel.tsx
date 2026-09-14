@@ -47,7 +47,7 @@ export default function ScenarioStatusPanel(props: {
     : undefined;
   const activityState =
     profile?.state?.campusActivities?.dayKey === currentActivityDayKey
-      ? profile.state.campusActivities
+      ? profile?.state?.campusActivities
       : undefined;
   const completedActivityIds: string[] = Array.isArray(activityState?.completedIds)
     ? activityState.completedIds
