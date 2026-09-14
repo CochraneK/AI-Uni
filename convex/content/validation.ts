@@ -70,6 +70,16 @@ export const validateContentPacks = (packs: ContentPack[]): ContentValidationIss
         }
       }
 
+      if (scenario.researchUse === 'none' && scenario.hiddenTargets.length > 0) {
+        issues.push({
+          level: 'error',
+          code: 'pure_life_has_hidden_targets',
+          message: `${scenario.id} is pure-life content and must not declare hidden assessment targets.`,
+          packId: pack.id,
+          scenarioId: scenario.id,
+        });
+      }
+
       if (scenario.safetyLevel === 'sensitive' && scenario.enabledByDefault) {
         issues.push({
           level: 'error',
@@ -93,7 +103,7 @@ export const validateContentPacks = (packs: ContentPack[]): ContentValidationIss
         });
       }
 
-      if (scenario.observableFeatures.length === 0) {
+      if (scenario.observableFeatures.length === 0 && scenario.researchUse !== 'none') {
         issues.push({
           level: 'warning',
           code: 'no_observable_features',
