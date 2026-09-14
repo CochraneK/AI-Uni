@@ -5,6 +5,7 @@ import type { LifeProfileSnapshot, RelationshipType } from '../life/types';
 import type { WorldLocationId } from '../world/locations';
 import { worldLocations } from '../world/locations';
 import { getUniversityProfile } from '../campus/registry';
+import { npcRoleTagsForName } from '../../data/characters';
 import { contentPacks, getScenario } from './registry';
 import { buildScenarioCandidates, selectScenario } from './controller';
 
@@ -44,6 +45,67 @@ const uniqueCompleted = (completed: string[], scenarioId: string) => {
 
 const pushRecent = (recent: string[], scenarioId: string) =>
   [...recent, scenarioId].slice(-MAX_RECENT_SCENARIOS);
+
+const squaredDistance = (
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
+
+const assignScenarioNpcs = async (
+  ctx: any,
+  worldId: any,
+  profileKey: string,
+  roles: string[],
+) => {
+  if (roles.length === 0) return [];
+  const world = await ctx.db.get(worldId);
+  if (!world) return [];
+
+  const tokenPrefix = 'ai-uni:';
+  const humanToken = profileKey.startsWith(tokenPrefix)
+    ? profileKey.slice(tokenPrefix.length)
+    : undefined;
+  const humanPlayer = humanToken
+    ? world.players.find((player: any) => player.human === humanToken)
+    : world.players.find((player: any) => Boolean(player.human));
+  if (!humanPlayer) return [];
+
+  const descriptions = await ctx.db
+    .query('playerDescriptions')
+    .withIndex('worldId', (q: any) => q.eq('worldId', worldId))
+    .collect();
+  const descriptionByPlayer = new Map(
+    descriptions.map((description: any) => [description.playerId, description]),
+  );
+
+  const candidates = world.agents
+    .map((agent: any) => world.players.find((player: any) => player.id === agent.playerId))
+    .filter((player: any) => player && player.id !== humanPlayer.id)
+    .sort(
+      (a: any, b: any) =>
+        squaredDistance(a.position, humanPlayer.position) -
+        squaredDistance(b.position, humanPlayer.position),
+    );
+
+  const used = new Set<string>();
+  const assignments: Array<{ playerId: any; role: string }> = [];
+
+  for (const role of roles) {
+    const matching = candidates.find((candidate: any) => {
+      if (used.has(candidate.id)) return false;
+      const name = descriptionByPlayer.get(candidate.id)?.name;
+      return name ? npcRoleTagsForName(name).includes(role) : false;
+    });
+    const fallback = candidates.find((candidate: any) => !used.has(candidate.id));
+    const selected = matching ?? fallback;
+    if (!selected) break;
+
+    used.add(selected.id);
+    assignments.push({ playerId: selected.id, role });
+  }
+
+  return assignments;
+};
 
 export const createScenarioRuntime = mutation({
   args: {
@@ -227,6 +289,15 @@ export const enterScenarioLocation = mutation({
       return { locationId, scenario: undefined, changed: true };
     }
 
+    const npcAssignments = runtime.worldId
+      ? await assignScenarioNpcs(
+          ctx,
+          runtime.worldId,
+          profile.profileKey,
+          selected.scenario.npcRoles,
+        )
+      : [];
+
     const runId = await ctx.db.insert('scenarioRuns', {
       runtimeId: args.runtimeId,
       profileId: runtime.profileId,
@@ -236,6 +307,7 @@ export const enterScenarioLocation = mutation({
       selectionIndex: runtime.selectionIndex,
       selectionReasons: selected.reasons,
       candidateCount: candidates.length,
+      npcAssignments,
     });
 
     await ctx.db.patch(args.runtimeId, {
@@ -248,7 +320,7 @@ export const enterScenarioLocation = mutation({
       updatedAt: now,
     });
 
-    return { locationId, scenario: selected.scenario, changed: true };
+    return { locationId, scenario: selected.scenario, npcAssignments, changed: true };
   },
 });
 
