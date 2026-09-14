@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
@@ -10,6 +11,7 @@ export default function ScenarioStatusPanel(props: {
   worldId: Id<'worlds'>;
   game: ServerGame;
 }) {
+  const [dayEndMessage, setDayEndMessage] = useState<string>();
   const humanTokenIdentifier = useQuery(api.world.userStatus, { worldId: props.worldId }) ?? null;
   const humanPlayerId = [...props.game.world.players.values()].find(
     (player) => player.human === humanTokenIdentifier,
@@ -22,12 +24,15 @@ export default function ScenarioStatusPanel(props: {
     humanTokenIdentifier,
   });
   const completeActiveScenario = useMutation(api.scenarios.runtime.completeActiveScenario);
+  const endFirstWeekDay = useMutation(api.life.day.endFirstWeekDay);
 
   const baseLocationName = locationId ? worldLocations[locationId]?.name : undefined;
   const locationName =
     locationId && universityProfile
       ? resolveCampusDisplayName(universityProfile, locationId, baseLocationName ?? locationId)
       : baseLocationName;
+  const isFirstWeek = profile?.chapterId === 'university_first_week';
+  const isFinalFirstWeekDay = isFirstWeek && profile?.chapterUnit === 7;
 
   if (!humanPlayerId) {
     return null;
@@ -39,7 +44,7 @@ export default function ScenarioStatusPanel(props: {
         <h2 className="font-display text-lg text-brown-100">AI-Uni · 大学生活</h2>
         {profile && (
           <span className="text-xs text-brown-300">
-            第 {profile.chapterUnit} 日
+            {isFirstWeek ? `第 ${profile.chapterUnit} / 7 日` : `阶段 ${profile.chapterUnit}`}
           </span>
         )}
       </div>
@@ -70,6 +75,35 @@ export default function ScenarioStatusPanel(props: {
         <p className="mt-4 text-sm leading-6 text-brown-300">
           现在没有必须处理的事件。可以随便走走、找人聊天，或者去别的地方看看。
         </p>
+      )}
+
+      {dayEndMessage && (
+        <p className="mt-4 rounded bg-brown-800 px-3 py-2 text-sm leading-6 text-brown-200">
+          {dayEndMessage}
+        </p>
+      )}
+
+      {profile && isFirstWeek && (
+        <button
+          className="mt-4 w-full rounded border border-brown-600 px-3 py-2 text-sm font-semibold text-brown-100 hover:bg-brown-700"
+          onClick={() => {
+            setDayEndMessage(undefined);
+            void endFirstWeekDay({ profileId: profile._id })
+              .then((result) => {
+                setDayEndMessage(
+                  result.firstWeekCompleted
+                    ? `${result.closingBeat} 第一章完成，接下来进入大一阶段。`
+                    : result.closingBeat,
+                );
+              })
+              .catch((error) => {
+                console.error('Failed to end AI-Uni day', error);
+                setDayEndMessage('今天暂时无法结束，请稍后再试。');
+              });
+          }}
+        >
+          {isFinalFirstWeekDay ? '结束第一周' : '结束今天'}
+        </button>
       )}
 
       {runtime && !runtime.behavioralResearchConsent && (
