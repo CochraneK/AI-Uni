@@ -31,10 +31,10 @@ export default function Home() {
         ariaHideApp={false}
       >
         <div className="font-body">
-          <h1 className="text-center text-6xl font-bold font-display game-title">校园生活实验</h1>
+          <h1 className="text-center text-6xl font-bold font-display game-title">AI-Uni</h1>
           <p>
-            欢迎来到 AI Town · BJTU Campus。这是一个以大学日常生活为主体、正在逐步改造成北交大校园风格的 AI Town
-            研究原型。你可以观察 NPC，也可以进入世界与他们聊天、上课、做小组作业和参加校园活动。
+            欢迎来到 AI-Uni。这是一个以大学日常生活为主体、逐步建设北交大校园与校外生活场景的 LLM 多智能体研究原型。
+            项目基于上游 AI Town 引擎扩展，你可以观察 NPC，也可以进入世界与他们聊天、上课、做小组作业、参加活动和处理各种日常事件。
           </p>
           <h2 className="text-4xl mt-4">怎么玩</h2>
           <p>
@@ -42,7 +42,7 @@ export default function Home() {
           </p>
           <h2 className="text-4xl mt-4">研究说明</h2>
           <p>
-            研究版本可能在取得知情同意后记录移动、选择、互动、对话以及反应时间，用于研究校园情境中的行为模式。
+            研究版本可能在取得知情同意后记录移动、选择、互动、对话以及反应时间，用于研究校园与日常生活情境中的行为模式。
             游戏内行为不会被直接解释为 PCL-5、CAPE-P15 或人格量表的正式分数，也不会用于自动诊断。
           </p>
           <p className="mt-4">
@@ -61,11 +61,11 @@ export default function Home() {
 
       <div className="w-full lg:h-screen min-h-screen relative isolate overflow-hidden lg:p-8 shadow-2xl flex flex-col justify-start">
         <h1 className="mx-auto text-4xl p-3 sm:text-8xl lg:text-9xl font-bold font-display leading-none tracking-wide game-title w-full text-left sm:text-center sm:w-auto">
-          AI Town · BJTU Campus
+          AI-Uni
         </h1>
 
         <div className="max-w-xs md:max-w-xl lg:max-w-none mx-auto my-4 text-center text-base sm:text-xl md:text-2xl text-white leading-tight shadow-solid">
-          北交大校园生活 × LLM NPC × 情境行为研究原型
+          大学生活世界 × LLM NPC × 情境行为研究
         </div>
 
         <Game />
@@ -74,7 +74,7 @@ export default function Home() {
           <div className="flex gap-4 flex-grow pointer-events-none">
             <FreezeButton />
             <MusicButton />
-            <Button href="https://github.com/CochraneK/ai-town" imgUrl={starImg}>
+            <Button href="https://github.com/CochraneK/ai-uni" imgUrl={starImg}>
               GitHub
             </Button>
             <InteractButton />
@@ -82,8 +82,8 @@ export default function Home() {
               说明
             </Button>
           </div>
-          <a href="https://github.com/a16z-infra/ai-town" aria-label="AI Town upstream">
-            <img className="w-8 h-8 pointer-events-auto" src={a16zImg} alt="AI Town upstream" />
+          <a href="https://github.com/a16z-infra/ai-town" aria-label="Upstream AI Town">
+            <img className="w-8 h-8 pointer-events-auto" src={a16zImg} alt="Upstream AI Town" />
           </a>
           <a href="https://convex.dev/c/ai-town">
             <img className="w-20 h-8 pointer-events-auto" src={convexImg} alt="Convex" />
