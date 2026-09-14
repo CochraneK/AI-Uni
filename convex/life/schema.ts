@@ -29,6 +29,8 @@ export const lifeTables = {
     completedDays: v.array(v.number()),
     completedScenarioIds: v.array(v.string()),
     ordinaryScenarioIds: v.array(v.string()),
+    // Optional for backwards compatibility with existing development saves.
+    ordinaryActivityIds: v.optional(v.array(v.string())),
     distinctNpcIds: v.array(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
