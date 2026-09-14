@@ -41,6 +41,7 @@ AI-Uni
 │   ├── campus-life
 │   ├── social-friction
 │   ├── city-life
+│   ├── life-course
 │   └── sensitive-research
 │
 ├── Behavioral Telemetry
@@ -106,7 +107,10 @@ AI-Uni 不把整个游戏做成一次短测验。第一章是 **大学第一周�
 - `campus-life`：普通校园日常，默认启用。
 - `social-friction`：讨厌的人、失约、插队、室友冲突、小组分工不公等现实摩擦，默认启用。
 - `city-life`：聚餐、KTV、地铁、实习等校外内容，目前已注册，等待地图/传送系统接入。
+- `life-course`：毕业、实习、第一份工作、长期关系、家庭照护、退休、生命回顾等长期人生内容，目前作为 planned pack。
 - `sensitive-research`：CAPE/PCL 相关探索性研究内容，默认关闭并要求独立研究方案。
+
+场景现在可以通过 `lifeContext` 限定年龄、人生 season、章节、职业阶段、发展任务和关系类型。普通生活内容也可以明确使用 `researchUse: 'none'`，避免所有剧情都偷偷变成心理测试。
 
 详见：
 
@@ -128,6 +132,8 @@ decision.*
 ```
 
 构念注册表与正式问卷注册表分离，因此以后新增量表不需要重写场景系统，也不需要把人生模拟状态直接当成心理得分。
+
+`convex/life/signals.ts` 另行登记身份、家庭、关系、社会网络、适应/复原、意义等长期候选行为信号；这些同样不是正式量表得分。
 
 ## 技术栈
 
@@ -209,7 +215,7 @@ convex/
 ├── campus/          # 校园配置
 ├── world/           # 校内外地点注册
 ├── content/         # Content Packs + 校验
-├── scenarios/       # 场景统一查询入口
+├── scenarios/       # 场景统一查询入口 + lifeContext 过滤
 ├── life/            # 生命周期 / 家庭 / 关系 / 生态 / 长期人生状态
 ├── assessment/      # 构念 + 正式测验注册
 └── research/        # session / telemetry / calibration
@@ -227,9 +233,11 @@ types.ts         生命周期领域类型
 model.ts         默认状态与长期机制
 development.ts   发展阶段 + 长期章节
 firstWeek.ts     第一章 7 天
+transitions.ts   跨章节 / 跨人生阶段默认过渡
 schema.ts        持久化表
 state.ts         生命周期状态 API
 theories.ts      理论目录与误用边界
+signals.ts       长期候选行为信号
 ```
 
 ## 安全与研究要求
