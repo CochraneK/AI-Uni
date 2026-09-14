@@ -64,7 +64,12 @@ export const writeTelemetryForHumanToken = async (
 ) => {
   const context = await researchContextForHumanToken(ctx, humanToken);
   if (!context) return false;
-  await writeMinimalTelemetry(ctx, context.session._id, event);
+  await writeMinimalTelemetry(ctx, context.session._id, {
+    ...event,
+    gameDay: event.gameDay ?? context.profile.totalGameDays,
+    sceneId: event.sceneId ?? context.runtime.activeScenarioId,
+    locationId: event.locationId ?? context.runtime.activeLocationId,
+  });
   return true;
 };
 
