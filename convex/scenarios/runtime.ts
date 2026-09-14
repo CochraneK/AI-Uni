@@ -5,7 +5,7 @@ import type { LifeProfileSnapshot, RelationshipType } from '../life/types';
 import type { WorldLocationId } from '../world/locations';
 import { worldLocations } from '../world/locations';
 import { getUniversityProfile } from '../campus/registry';
-import { npcRoleTagsForName } from '../../data/characters';
+import { npcRoleTagsForName } from '../../data/npcProfiles';
 import { contentPacks, getScenario } from './registry';
 import { buildScenarioCandidates, selectScenario } from './controller';
 
@@ -51,6 +51,11 @@ const squaredDistance = (
   b: { x: number; y: number },
 ) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
 
+type PlayerDescriptionLite = {
+  playerId: string;
+  name: string;
+};
+
 const assignScenarioNpcs = async (
   ctx: any,
   worldId: any,
@@ -74,8 +79,11 @@ const assignScenarioNpcs = async (
     .query('playerDescriptions')
     .withIndex('worldId', (q: any) => q.eq('worldId', worldId))
     .collect();
-  const descriptionByPlayer = new Map(
-    descriptions.map((description: any) => [description.playerId, description]),
+  const descriptionByPlayer = new Map<string, PlayerDescriptionLite>(
+    descriptions.map((description: any) => [
+      description.playerId,
+      { playerId: description.playerId, name: description.name },
+    ]),
   );
 
   const candidates = world.agents
