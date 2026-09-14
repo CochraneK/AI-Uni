@@ -60,6 +60,7 @@ export const writeBehavioralFeature = mutation({
     sessionId: v.id('researchSessions'),
     sceneId: v.optional(v.string()),
     featureKey: v.string(),
+    constructId: v.optional(v.string()),
     value: v.number(),
     modelVersion: v.string(),
     source: v.union(v.literal('rule'), v.literal('llm_rubric'), v.literal('statistical_model')),
@@ -68,6 +69,24 @@ export const writeBehavioralFeature = mutation({
     await ctx.db.insert('behavioralFeatures', {
       ...args,
       computedAt: Date.now(),
+    }),
+});
+
+export const saveCalibrationMeasure = mutation({
+  args: {
+    sessionId: v.id('researchSessions'),
+    instrument: v.string(),
+    version: v.string(),
+    language: v.optional(v.string()),
+    purpose: v.optional(v.union(v.literal('calibration'), v.literal('criterion'), v.literal('research_only'))),
+    rawData: v.any(),
+    scoreData: v.optional(v.any()),
+    metadata: v.optional(v.any()),
+  },
+  handler: async (ctx, args) =>
+    await ctx.db.insert('calibrationMeasures', {
+      ...args,
+      completedAt: Date.now(),
     }),
 });
 
