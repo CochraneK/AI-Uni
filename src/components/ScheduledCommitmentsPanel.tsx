@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
+import type { CampusLocationId } from '../../convex/campus/config';
 import { resolveCampusDisplayName } from '../../convex/campus/registry';
 import { worldLocations } from '../../convex/world/locations';
 import type { ScenarioRuntimeView } from '../hooks/useScenarioRuntime';
@@ -23,6 +24,7 @@ const temporalText: Record<string, string> = {
 
 export default function ScheduledCommitmentsPanel(props: {
   scenarioRuntime: ScenarioRuntimeView;
+  onNavigateToLocation: (locationId: CampusLocationId) => void;
 }) {
   const { profile, locationId, activeScenario, universityProfile } = props.scenarioRuntime;
   const commitments = useQuery(
@@ -48,9 +50,10 @@ export default function ScheduledCommitmentsPanel(props: {
 
       <div className="mt-3 grid gap-2">
         {commitments.map((commitment) => {
-          const baseName = worldLocations[commitment.locationId]?.name ?? commitment.locationId;
+          const commitmentLocationId = commitment.locationId as CampusLocationId;
+          const baseName = worldLocations[commitmentLocationId]?.name ?? commitment.locationId;
           const commitmentLocationName = universityProfile
-            ? resolveCampusDisplayName(universityProfile, commitment.locationId, baseName)
+            ? resolveCampusDisplayName(universityProfile, commitmentLocationId, baseName)
             : baseName;
           const isHere = locationId === commitment.locationId;
           const unresolved = commitment.status === 'scheduled';
@@ -89,6 +92,18 @@ export default function ScheduledCommitmentsPanel(props: {
 
               {unresolved && (
                 <div className="mt-2 flex flex-wrap gap-2">
+                  {!isHere && commitment.temporalState !== 'expired' && (
+                    <button
+                      className="rounded border border-brown-500 px-2.5 py-1.5 text-xs font-semibold text-brown-100 hover:bg-brown-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      disabled={runningId !== undefined}
+                      onClick={() => {
+                        props.onNavigateToLocation(commitmentLocationId);
+                        setMessage(`正在前往 ${commitmentLocationName}。校园移动时间会计入今天。`);
+                      }}
+                    >
+                      前往 {commitmentLocationName}
+                    </button>
+                  )}
                   <button
                     className="rounded bg-brown-600 px-2.5 py-1.5 text-xs font-semibold text-brown-50 hover:bg-brown-500 disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={checkInDisabled}
