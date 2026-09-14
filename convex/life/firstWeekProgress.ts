@@ -21,14 +21,21 @@ const getProgress = async (ctx: any, profileId: any) =>
     .withIndex('byProfile', (q: any) => q.eq('profileId', profileId))
     .first();
 
+const inferredCompletedDays = (profile: any) => {
+  if (!profile || profile.chapterId !== 'university_first_week') return [];
+  const completedCount = Math.max(0, Math.min(6, profile.chapterUnit - 1));
+  return Array.from({ length: completedCount }, (_, index) => index + 1);
+};
+
 const getOrCreateProgress = async (ctx: any, profileId: any) => {
   const existing = await getProgress(ctx, profileId);
   if (existing) return existing;
 
+  const profile = await ctx.db.get(profileId);
   const now = Date.now();
   const id = await ctx.db.insert('firstWeekProgress', {
     profileId,
-    completedDays: [],
+    completedDays: inferredCompletedDays(profile),
     completedScenarioIds: [],
     ordinaryScenarioIds: [],
     distinctNpcIds: [],
@@ -114,7 +121,7 @@ export const evaluateFirstWeekReadiness = async (
   profileId: any,
   includeCurrentDay?: number,
 ): Promise<FirstWeekReadiness> => {
-  const progress = await getProgress(ctx, profileId);
+  const progress = (await getProgress(ctx, profileId)) ?? (await getOrCreateProgress(ctx, profileId));
   const completedDays = progress?.completedDays ?? [];
   const effectiveDays = includeCurrentDay
     ? uniqueNumberAppend(completedDays, includeCurrentDay)
