@@ -1,4 +1,4 @@
-# AI-Uni Content Pack / Assessment Extension Guide
+# AI Town Content Pack / Assessment Extension Guide
 
 This project is intentionally split into four layers so the world can grow without turning every feature into a hard-coded psychological test.
 
@@ -125,4 +125,4 @@ The world should stay mostly ordinary life. A useful operating target is roughly
 - 20–30% naturally informative situations;
 - 5–10% explicit calibration tasks or questionnaires.
 
-This keeps AI-Uni usable as a campus-life world instead of turning every interaction into an obvious test.
+This keeps AI Town usable as a campus-life world instead of turning every interaction into an obvious test.
