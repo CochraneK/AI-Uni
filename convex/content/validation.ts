@@ -1,0 +1,116 @@
+import { constructRegistry } from '../assessment/constructs';
+import { worldLocations } from '../world/locations';
+import type { ContentPack } from './types';
+
+export type ContentValidationIssue = {
+  level: 'error' | 'warning';
+  code: string;
+  message: string;
+  packId?: string;
+  scenarioId?: string;
+};
+
+export const validateContentPacks = (packs: ContentPack[]): ContentValidationIssue[] => {
+  const issues: ContentValidationIssue[] = [];
+  const scenarioIds = new Set<string>();
+  const packIds = new Set<string>();
+
+  for (const pack of packs) {
+    if (packIds.has(pack.id)) {
+      issues.push({
+        level: 'error',
+        code: 'duplicate_pack_id',
+        message: `Duplicate content pack id: ${pack.id}`,
+        packId: pack.id,
+      });
+    }
+    packIds.add(pack.id);
+
+    for (const scenario of pack.scenarios) {
+      if (scenario.packId !== pack.id) {
+        issues.push({
+          level: 'error',
+          code: 'pack_id_mismatch',
+          message: `Scenario ${scenario.id} declares packId ${scenario.packId} but is inside ${pack.id}.`,
+          packId: pack.id,
+          scenarioId: scenario.id,
+        });
+      }
+
+      if (scenarioIds.has(scenario.id)) {
+        issues.push({
+          level: 'error',
+          code: 'duplicate_scenario_id',
+          message: `Duplicate scenario id: ${scenario.id}`,
+          packId: pack.id,
+          scenarioId: scenario.id,
+        });
+      }
+      scenarioIds.add(scenario.id);
+
+      if (!worldLocations[scenario.location]) {
+        issues.push({
+          level: 'error',
+          code: 'unknown_location',
+          message: `Unknown location ${scenario.location} in ${scenario.id}.`,
+          packId: pack.id,
+          scenarioId: scenario.id,
+        });
+      }
+
+      for (const target of scenario.hiddenTargets) {
+        if (!constructRegistry[target]) {
+          issues.push({
+            level: 'error',
+            code: 'unknown_construct',
+            message: `Unknown construct ${target} in ${scenario.id}.`,
+            packId: pack.id,
+            scenarioId: scenario.id,
+          });
+        }
+      }
+
+      if (scenario.safetyLevel === 'sensitive' && scenario.enabledByDefault) {
+        issues.push({
+          level: 'error',
+          code: 'sensitive_enabled_by_default',
+          message: `Sensitive scenario ${scenario.id} must be opt-in.`,
+          packId: pack.id,
+          scenarioId: scenario.id,
+        });
+      }
+
+      const includesClinicalExploration = scenario.hiddenTargets.some(
+        (target) => target.startsWith('cape.') || target.startsWith('pcl5_associated.'),
+      );
+      if (includesClinicalExploration && scenario.researchUse !== 'exploratory_only') {
+        issues.push({
+          level: 'error',
+          code: 'clinical_construct_not_exploratory',
+          message: `${scenario.id} includes CAPE/PCL-associated targets and must use exploratory_only.`,
+          packId: pack.id,
+          scenarioId: scenario.id,
+        });
+      }
+
+      if (scenario.observableFeatures.length === 0) {
+        issues.push({
+          level: 'warning',
+          code: 'no_observable_features',
+          message: `${scenario.id} has no observable features.`,
+          packId: pack.id,
+          scenarioId: scenario.id,
+        });
+      }
+    }
+  }
+
+  return issues;
+};
+
+export const assertValidContentPacks = (packs: ContentPack[]) => {
+  const errors = validateContentPacks(packs).filter((issue) => issue.level === 'error');
+  if (errors.length > 0) {
+    throw new Error(`Invalid content packs:\n${errors.map((issue) => `- ${issue.message}`).join('\n')}`);
+  }
+};
