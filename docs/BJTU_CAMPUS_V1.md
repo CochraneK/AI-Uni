@@ -1,6 +1,6 @@
-# BJTU Campus v1
+# AI-Uni · BJTU Campus v1
 
-This branch turns AI Town into a fictionalized Beijing Jiaotong University campus-life research prototype.
+AI-Uni is a university-life simulation and behavioral research prototype built on the upstream a16z AI Town engine. The first playable world is a fictionalized Beijing Jiaotong University campus.
 
 ## Product rule
 
@@ -12,7 +12,7 @@ Target composition for a session:
 - ~20–30% naturally informative social / decision / stress situations
 - ~5–10% explicit calibration or questionnaire steps
 
-The campus is the first hub, not the long-term boundary. The architecture now supports off-campus dining, KTV/parties, transit, internships, travel and future online/social-media scenes without redesigning the scenario model.
+The campus is the first hub, not the long-term boundary. The architecture supports off-campus dining, KTV/parties, transit, internships, travel and future online/social-media scenes without redesigning the scenario model.
 
 ## First playable map
 
@@ -31,7 +31,7 @@ The place names are campus-inspired gameplay anchors. The game map should be pre
 
 ## Art pipeline
 
-AI Town loads the map module from `convex/init.ts`. The original repository imports `data/gentle.ts/js`.
+AI-Uni currently inherits the upstream AI Town map pipeline. The map module is loaded from `convex/init.ts`; the legacy starter map comes from `data/gentle.js`.
 
 For the BJTU map:
 
@@ -42,22 +42,11 @@ For the BJTU map:
 5. Convert it with:
 
 ```bash
-node data/convertMap.js data/bjtu-map.json /ai-town/assets/bjtu/bjtu_tileset.png <widthPx> <heightPx>
+node data/convertMap.js data/bjtu-map.json /ai-uni/assets/bjtu/bjtu_tileset.png <widthPx> <heightPx>
 ```
 
 6. Rename the generated module to `data/bjtu.js` (or `.ts`).
-7. Change `convex/init.ts` from:
-
-```ts
-import * as map from '../data/gentle';
-```
-
-to:
-
-```ts
-import * as map from '../data/bjtu';
-```
-
+7. Change `convex/init.ts` from the starter map import to the BJTU map import.
 8. Wipe/reseed the development database after changing map or character seed data.
 
 Suggested asset layout:
@@ -198,7 +187,7 @@ The scenario registry fails fast on invalid content configuration.
 
 Participants may be blinded to the exact construct attached to each scene, but they should not be deceived about the fact that choices, movement and conversations are being recorded for behavioral / psychological research.
 
-Sensitive scenes should be skippable. The application must not present diagnosis, treatment advice or crisis conclusions from these experimental signals.
+Sensitive scenes should be skippable. AI-Uni must not present diagnosis, treatment advice or crisis conclusions from these experimental signals.
 
 Free-text dialogue needs a study-specific retention/de-identification policy before real participant deployment.
 
@@ -212,3 +201,7 @@ Free-text dialogue needs a study-specific retention/de-identification policy bef
 6. Add participant consent/session UI.
 7. Add independent questionnaire/calibration UI.
 8. Build a researcher-only export / dashboard.
+
+## Upstream attribution
+
+AI-Uni is based on the a16z **AI Town** open-source project. References to `AI Town` in inherited engine/module names and upstream links refer to that source project, not the AI-Uni product name.
