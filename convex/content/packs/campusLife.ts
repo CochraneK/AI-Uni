@@ -2,8 +2,8 @@ import { defineContentPack } from '../types';
 
 export const campusLifePack = defineContentPack({
   id: 'campus-life',
-  title: '校园日常',
-  description: '高频、低压力的普通大学生活内容，作为世界的主体验与行为基线。',
+  title: '大学日常',
+  description: '高频、低压力、跨学校成立的普通大学生活内容，作为世界主体验与行为基线。',
   scope: 'campus',
   status: 'enabled',
   scenarios: [
@@ -13,7 +13,7 @@ export const campusLifePack = defineContentPack({
       packId: 'campus-life',
       location: 'student_center',
       ordinaryGoal: '了解几个社团并决定是否加入。',
-      setup: '活动中心同时有几个社团在招新，同学邀请玩家一起逛摊位。',
+      setup: '学生活动区域同时有几个社团在招新，同学邀请玩家一起逛摊位。',
       npcRoles: ['club_member', 'classmate'],
       hiddenTargets: ['big5.extraversion', 'big5.openness'],
       safetyLevel: 'ordinary',
@@ -56,7 +56,7 @@ export const campusLifePack = defineContentPack({
       id: 'schedule_change_01',
       title: '临时换教室',
       packId: 'campus-life',
-      location: 'siyuan_building',
+      location: 'teaching_building',
       ordinaryGoal: '找到临时变更后的教室并按时上课。',
       setup: '课程群临时通知换教室，不同同学给出了略有差异的信息。',
       npcRoles: ['classmate', 'class_representative'],
@@ -81,7 +81,7 @@ export const campusLifePack = defineContentPack({
       id: 'presentation_reminder_01',
       title: '汇报顺序提前',
       packId: 'campus-life',
-      location: 'siyuan_building',
+      location: 'teaching_building',
       ordinaryGoal: '完成课堂展示。',
       setup: '老师临时提醒展示顺序提前，玩家需要决定继续准备、求助同学还是调整计划。',
       npcRoles: ['teacher', 'teammate'],
