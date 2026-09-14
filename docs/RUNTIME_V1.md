@@ -1,8 +1,8 @@
 # AI-Uni Runtime v1
 
-This document describes the first playable runtime bridge between the inherited AI Town world and the AI-Uni university/lifespan layers.
+This document describes the first playable runtime bridge between the inherited AI Town engine and the AI-Uni university-life, lifespan and consented-research layers.
 
-## Runtime loop
+## Current playable loop
 
 ```text
 human player position
@@ -11,24 +11,28 @@ normalized map zone
         ↓
 stable WorldLocationId
         ↓
-life-stage + pack + safety filtering
+life-stage / first-week day / pack / safety filtering
         ↓
 deterministic weighted scenario selection
         ↓
-active life event
+NPC role assignment
         ↓
-complete / leave / change location
+assigned NPC approaches / talks in scene context
         ↓
-recent-history cooldown + next event
+human dialogue + scene progress
+        ↓
+auto-complete or manual complete / leave / change location
+        ↓
+day-end progression
+        ↓
+Day 7 completion gate → freshman_year
 ```
 
-The first implementation deliberately keeps map geometry, scenario meaning and psychological research metadata separate.
+Map geometry, narrative state and research data remain separate by design.
 
 ## 1. Zones are map-agnostic
 
-`convex/world/zones.ts` defines map zones using normalized `0..1` bounds instead of hard-coded pixels. The same logical location IDs therefore survive map-resolution changes.
-
-Current generic locations:
+`convex/world/zones.ts` defines logical campus zones with normalized `0..1` bounds instead of hard-coded pixel coordinates. The current generic location IDs are:
 
 ```text
 campus_gate
@@ -41,48 +45,96 @@ sports_field
 dormitory
 ```
 
-A future university template may provide a more precise zone layout for its map while keeping these stable semantic IDs. Player-facing names can still be overridden by `UniversityProfile.locationDisplayNames`.
+The runtime can therefore keep the same semantic locations when `data/gentle.js` is replaced by the future `generic_campus_v1` map or by an optional university-specific template.
 
-## 2. Location changes are idempotent
+`enterScenarioLocation` is idempotent: remaining in the same zone does not continuously reroll events on movement ticks.
 
-`enterScenarioLocation` treats remaining inside the same zone as a no-op. The client may observe player position frequently, but scenario selection only happens when the resolved location changes.
-
-This is important because movement updates happen much more frequently than meaningful life events.
-
-## 3. Scenario selection
+## 2. Scenario selection is reproducible
 
 `convex/scenarios/controller.ts` filters candidates by:
 
 - enabled content packs;
-- current playable location;
-- current life season / chapter / age / career stage;
-- active developmental tasks and relationship types when required;
-- sensitive-research opt-in;
-- scenario completion/history rules.
+- playable location;
+- life season, chapter, age and career stage;
+- first-week day windows;
+- developmental tasks and relationship types when required;
+- separate sensitive-research consent;
+- recent and completed scenario history.
 
-Selection is weighted rather than uniform:
+Selection is weighted rather than uniform. Pure-life content receives the strongest default weight, ordinary behavioral-feature scenes receive less, and exploratory/sensitive research content is strongly de-emphasized. Repetition, research-heavy streaks and repeated use of one pack are also penalized when alternatives exist.
 
-- pure-life (`researchUse: 'none'`) content receives the strongest default weight;
-- ordinary behavioral-feature scenes receive a lower weight;
-- exploratory/sensitive research content is strongly de-emphasized and separately gated;
-- recently repeated scenarios are penalized;
-- repeated research-heavy sequences are penalized;
-- repeated use of the same content pack is mildly penalized when alternatives exist.
+For the same `seed + selectionIndex + location + chapter state`, selection is deterministic. This makes debugging and later preregistered experimental conditions reproducible.
 
-Selection is deterministic for the same `seed + selectionIndex + location + chapter state`, making test sessions and experimental conditions reproducible.
+## 3. The first week is a real seven-day chapter
 
-## 4. Pure life is first-class
+`convex/life/firstWeek.ts` defines seven fully playable days with different themes:
 
-The default campus pack now contains ordinary scenes with no hidden construct target, including:
+1. arrival and settling in;
+2. first formal classes;
+3. first collaboration;
+4. clubs and exploration;
+5. first interpersonal friction;
+6. weekend activity;
+7. reflection and transition.
 
-- breakfast;
-- browsing / resting in the library;
-- walking around campus;
-- tidying the dorm room;
-- casual exercise;
-- meeting somebody at the campus gate.
+`firstWeekDays` only constrains content while `chapterId === 'university_first_week'`. Reusable campus events return to the normal event pool after the player enters `freshman_year`.
 
-These scenes are intentionally valid with:
+`firstWeekProgress` stores gameplay progress separately from research data:
+
+- completed playable days;
+- completed scenario IDs;
+- completed pure-life scenario IDs;
+- distinct NPCs with whom the human actually sent a message.
+
+Day 7 is gated by player-facing requirements:
+
+```text
+7 completed playable days
+≥ 3 completed life events
+≥ 4 distinct NPC interactions
+≥ 1 pure ordinary-life event
+```
+
+These are chapter-completion rules, not psychological measurements. Research consent is not required to finish the chapter.
+
+Existing first-week saves lazily infer already-finished day numbers from `chapterUnit`; they do not fabricate past events or NPC interactions.
+
+## 4. NPC role assignment is narrative-only
+
+When a scenario starts, `convex/scenarios/runtime.ts` assigns suitable NPCs to its declared roles. Lightweight role tags live in `data/npcProfiles.ts`, so roles such as `teacher`, `roommate`, `class_representative`, `teammate` or `club_member` prefer stable characters that plausibly fit them.
+
+Assigned NPCs are prioritized when choosing whom to approach for conversation. The inherited AI Town nearest-candidate bug was also corrected so fallback proximity uses each candidate's real position rather than the current NPC's position.
+
+`convex/scenarios/npcContext.ts` deliberately exposes only player-facing narrative context to the LLM:
+
+- scene title;
+- situational role;
+- ordinary situation;
+- ordinary player goal;
+- safety/uncertainty instructions.
+
+It does **not** expose `hiddenTargets`, questionnaire names, research-use flags, observable-feature keys or selector diagnostics. NPC-to-NPC background conversations remain autonomous.
+
+## 5. Dialogue can advance life events
+
+`convex/scenarios/progress.ts` tracks meaningful human replies to NPCs assigned to the active scene. Current gameplay thresholds are:
+
+```text
+pure ordinary-life scene: 1 human reply
+ordinary task scene:       2 human replies
+mild-stress scene:         3 human replies
+sensitive scene:           never auto-complete
+```
+
+These thresholds are narrative pacing rules only. They do not calculate Big Five, CAPE, PCL-5 or any other psychological score.
+
+Players may still manually mark an event complete when they consider the situation resolved. After completion, the runtime does not immediately spawn another event in the same zone; further movement/location change drives the next selection, avoiding task spam.
+
+## 6. Pure life is first-class
+
+The default campus pack contains ordinary scenes with no hidden construct target, including breakfast, library downtime, a campus walk, tidying the living space, casual exercise and meeting someone at the gate.
+
+They are valid with:
 
 ```ts
 researchUse: 'none'
@@ -90,75 +142,70 @@ hiddenTargets: []
 observableFeatures: []
 ```
 
-AI-Uni should remain a life simulation even when all research collection is disabled.
+AI-Uni must remain a coherent life simulation when all research collection is disabled.
 
-## 5. Runtime persistence
+## 7. Gameplay persistence and research telemetry are separate
 
-`scenarioRuntimeStates` stores compact gameplay state:
+Gameplay tables such as `scenarioRuntimeStates`, `scenarioRuns`, `lifeProfiles`, `lifeEvents` and `firstWeekProgress` keep the minimum state required for the world and story to function.
 
-- active location and active scenario;
-- enabled content packs;
-- seed and selection counter;
-- recent scenario IDs;
-- bounded completed-scenario history;
-- behavioral-research consent state;
-- sensitive-research consent state.
-
-`scenarioRuns` stores event lifecycle metadata such as scenario ID, location, start/end timestamps, outcome, selection index and selection diagnostics.
-
-This is gameplay state. It is deliberately separate from fine-grained research telemetry.
-
-## 6. Consent boundary
-
-The default runtime is created with:
+Research telemetry is a separate opt-in path. The default scenario runtime is created with:
 
 ```text
 behavioralResearchConsent = false
 sensitiveResearchConsent = false
 ```
 
-Ordinary gameplay can continue in this mode. The game may still maintain the minimum state required to know what happened in the story, but research telemetry must not be enabled simply because a scene has research metadata.
+When behavioral research consent is off, ordinary gameplay continues and research telemetry is not written.
 
-Sensitive-research consent cannot be enabled without behavioral-research consent.
+When an open research session and consent are both present, minimal telemetry may record:
 
-## 7. Client bridge
+- meaningful location transitions;
+- scene enter/exit;
+- day completion;
+- human-to-NPC message direction, character count and participant ID;
+- scenario completion metadata.
 
-`src/hooks/useScenarioRuntime.ts` connects the current human player to the life/scenario runtime:
+Raw dialogue text is **not copied into `telemetryEvents` by default**. Precise movement is not recorded frame-by-frame. Sensitive research additionally requires `sensitiveResearchConsent`.
 
-1. create/load the player's long-term life profile;
-2. create/load scenario runtime state;
-3. resolve player coordinates through the active university map profile;
-4. synchronize only actual zone transitions;
-5. expose the active ordinary-life scenario to the UI.
+## 8. Player-facing runtime UI
 
-`ScenarioStatusPanel` shows only player-facing life information:
+`src/hooks/useScenarioRuntime.ts` connects the human player's current world state to the life/scenario runtime.
 
-- current location;
-- event title;
-- setup;
-- ordinary goal;
-- a prototype completion action.
+`ScenarioStatusPanel` now displays only ordinary gameplay information:
 
-It must never expose `hiddenTargets`, clinical constructs or internal selection weights to the player.
+- current campus location;
+- current event setup and goal;
+- current first-week day;
+- first-week chapter progress;
+- event completion/day-end controls;
+- whether research recording is disabled.
 
-## 8. Next runtime integrations
+It never displays hidden assessment constructs, clinical labels or internal scenario weights.
 
-The next vertical-slice work should build on this runtime rather than bypassing it:
+## 9. Runtime invariants under test
+
+Jest tests protect core runtime boundaries, including:
+
+- first-week events stay on their configured days;
+- first-week day restrictions do not permanently lock reusable content afterward;
+- sensitive scenarios remain blocked without separate consent;
+- pure-life scenes retain stronger default selection weight than research scenes;
+- dialogue auto-completion thresholds remain 1 / 2 / 3 / disabled for the four safety/pacing classes.
+
+CI runs the unit test suite before TypeScript and the production Vite build.
+
+## 10. Next implementation milestone
+
+The next major playable milestone is no longer the scenario controller. It is the world itself:
 
 ```text
-scenario enter/exit
-    ↓
-NPC role assignment
-    ↓
-controlled LLM context
-    ↓
-dialogue / decision interaction
-    ↓
-consented telemetry hooks
-    ↓
-day-end progression
-    ↓
-7-day Chapter 1 completion
+purpose-built generic_campus_v1 pixel map
+        ↓
+exact zone layout for the new map
+        ↓
+map-object interactions / richer local activities
+        ↓
+city/off-campus expansion
 ```
 
-After that, replace the inherited starter map with a purpose-built `generic_campus_v1` pixel map. Specific university maps remain optional templates layered over the same runtime contracts.
+Specific real-university maps remain optional templates layered over the generic runtime contract. Researcher dashboard/export, calibrated behavioral models, questionnaire delivery and production consent UI remain separate later layers.
