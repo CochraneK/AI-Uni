@@ -6,6 +6,7 @@ import { Stage } from '@pixi/react';
 import { ConvexProvider, useConvex, useQuery } from 'convex/react';
 import PlayerDetails from './PlayerDetails.tsx';
 import ScenarioStatusPanel from './ScenarioStatusPanel.tsx';
+import CampusTravelStatus from './CampusTravelStatus.tsx';
 import { api } from '../../convex/_generated/api';
 import { useWorldHeartbeat } from '../hooks/useWorldHeartbeat.ts';
 import { useHistoricalTime } from '../hooks/useHistoricalTime.ts';
@@ -87,6 +88,7 @@ https://github.com/michalochman/react-pixi-fiber/issues/145#issuecomment-5315492
           className="flex flex-col overflow-y-auto shrink-0 px-4 py-6 sm:px-6 lg:w-96 xl:pr-6 border-t-8 sm:border-t-0 sm:border-l-8 border-brown-900  bg-brown-800 text-brown-100"
           ref={scrollViewRef}
         >
+          <CampusTravelStatus scenarioRuntime={scenarioRuntime} />
           <ScenarioStatusPanel
             humanPlayerId={humanPlayerId}
             scenarioRuntime={scenarioRuntime}
