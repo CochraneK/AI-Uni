@@ -58,6 +58,51 @@ export const validateContentPacks = (packs: ContentPack[]): ContentValidationIss
         });
       }
 
+      const firstWeekDays = scenario.lifeContext?.firstWeekDays;
+      if (firstWeekDays) {
+        if (firstWeekDays.length === 0) {
+          issues.push({
+            level: 'error',
+            code: 'empty_first_week_window',
+            message: `${scenario.id} declares an empty firstWeekDays window.`,
+            packId: pack.id,
+            scenarioId: scenario.id,
+          });
+        }
+        const invalidDays = firstWeekDays.filter(
+          (day) => !Number.isInteger(day) || day < 1 || day > 7,
+        );
+        if (invalidDays.length > 0) {
+          issues.push({
+            level: 'error',
+            code: 'invalid_first_week_day',
+            message: `${scenario.id} has invalid firstWeekDays: ${invalidDays.join(', ')}. Expected integers 1..7.`,
+            packId: pack.id,
+            scenarioId: scenario.id,
+          });
+        }
+        if (new Set(firstWeekDays).size !== firstWeekDays.length) {
+          issues.push({
+            level: 'error',
+            code: 'duplicate_first_week_day',
+            message: `${scenario.id} repeats a value in firstWeekDays.`,
+            packId: pack.id,
+            scenarioId: scenario.id,
+          });
+        }
+      }
+
+      const chapterUnits = scenario.lifeContext?.chapterUnits;
+      if (chapterUnits?.some((unit) => !Number.isInteger(unit) || unit < 1)) {
+        issues.push({
+          level: 'error',
+          code: 'invalid_chapter_unit',
+          message: `${scenario.id} chapterUnits must contain positive integers.`,
+          packId: pack.id,
+          scenarioId: scenario.id,
+        });
+      }
+
       for (const target of scenario.hiddenTargets) {
         if (!constructRegistry[target]) {
           issues.push({
