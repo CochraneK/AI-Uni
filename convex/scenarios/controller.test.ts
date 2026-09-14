@@ -110,4 +110,20 @@ describe('scenario controller', () => {
       ),
     ).toBe(false);
   });
+
+  test('allows cafeteria queue friction at lunch but not mid-afternoon', () => {
+    const queueCutting = scenario('queue_cutting_01');
+    expect(
+      scenarioCanRun(
+        queueCutting,
+        context({ gameMinute: 12 * 60, remainingMinutes: 11 * 60 }),
+      ),
+    ).toBe(true);
+    expect(
+      scenarioCanRun(
+        queueCutting,
+        context({ gameMinute: 15 * 60, remainingMinutes: 8 * 60 }),
+      ),
+    ).toBe(false);
+  });
 });
