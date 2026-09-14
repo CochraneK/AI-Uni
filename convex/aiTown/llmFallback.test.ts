@@ -1,7 +1,9 @@
 import {
+  hasDeepSeekChat,
   isLoopbackLLMUrl,
   scriptedAgentMessage,
   shouldUseScriptedNpcFallback,
+  shouldUseSemanticNpcMemory,
 } from './llmFallback';
 
 describe('cloud-safe NPC LLM fallback', () => {
@@ -32,6 +34,22 @@ describe('cloud-safe NPC LLM fallback', () => {
       }),
     ).toBe(false);
     expect(shouldUseScriptedNpcFallback({ LLM_API_URL: 'https://llm.example.com' })).toBe(false);
+  });
+
+  test('uses DeepSeek for real chat while leaving semantic memory off by default', () => {
+    const env = { DEEPSEEK_API_KEY: 'configured' };
+    expect(hasDeepSeekChat(env)).toBe(true);
+    expect(shouldUseScriptedNpcFallback(env)).toBe(false);
+    expect(shouldUseSemanticNpcMemory(env)).toBe(false);
+  });
+
+  test('allows an explicit semantic-memory override for a separately configured embedding path', () => {
+    expect(
+      shouldUseSemanticNpcMemory({
+        DEEPSEEK_API_KEY: 'configured',
+        AI_UNI_MEMORY_MODE: 'on',
+      }),
+    ).toBe(true);
   });
 
   test('supports explicit scripted and llm overrides', () => {
