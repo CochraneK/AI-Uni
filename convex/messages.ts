@@ -59,7 +59,6 @@ export const writeMessage = mutation({
       )?.playerId;
 
       await recordFirstWeekNpcInteractionForHumanToken(ctx, author.human, otherPlayerId);
-      await recordScenarioDialogueProgress(ctx, author.human, otherPlayerId);
       await writeTelemetryForHumanToken(ctx, author.human, {
         eventType: 'dialogue',
         action: 'human_message_sent',
@@ -70,6 +69,7 @@ export const writeMessage = mutation({
           direction: 'human_to_npc',
         },
       });
+      await recordScenarioDialogueProgress(ctx, author.human, otherPlayerId);
     }
 
     await insertInput(ctx, args.worldId, 'finishSendingMessage', {
