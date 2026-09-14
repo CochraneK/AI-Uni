@@ -119,6 +119,15 @@ so built assets resolve under the project Pages path rather than the account roo
 
 GitHub Pages hosts only the browser UI. In full mode, NPC generation runs server-side in Convex.
 
-The inherited AI Town configuration currently defaults to local Ollama when no cloud provider is configured. A hosted Convex deployment cannot reach a player's `127.0.0.1:11434`, so the full hosted NPC runtime still needs a cloud-accessible LLM provider. Until then, the Pages Demo uses clearly labeled scripted replies rather than pretending to be LLM-generated dialogue.
+Convex actions execute inside the Convex deployment, including during `convex dev`. Therefore a URL such as `http://127.0.0.1:11434` refers to the Convex worker itself, not to Ollama running on the developer's laptop.
+
+AI-Uni now handles this explicitly:
+
+- if the inherited Ollama configuration resolves to a loopback-only address, NPC generation automatically uses deterministic scripted dialogue so the simulation remains playable;
+- semantic conversation-memory generation is skipped while that fallback is active, avoiding repeated unreachable embedding requests;
+- if a cloud-reachable `LLM_API_URL`, provider API key, or non-loopback Ollama host is configured, the normal LLM path is used automatically;
+- `AI_UNI_NPC_MODE=scripted` forces the fallback and `AI_UNI_NPC_MODE=llm` forces the real LLM path for debugging.
+
+The scripted fallback preserves movement, conversation state, scenario context, day progression and telemetry wiring. It is a development/resilience mode, not a substitute for the final LLM experience.
 
 Provider API keys belong in Convex deployment environment variables, never in GitHub Pages frontend variables.
