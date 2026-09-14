@@ -2,17 +2,21 @@ import { v } from 'convex/values';
 import { mutation, query } from '../_generated/server';
 import { defaultLifeProfile } from '../life/model';
 import type { LifeProfileSnapshot, RelationshipType } from '../life/types';
+import {
+  getDayClock,
+  makeDayClockKey,
+  minutesRemainingInDay,
+} from '../life/dayClock';
 import type { WorldLocationId } from '../world/locations';
 import { worldLocations } from '../world/locations';
 import { getUniversityProfile } from '../campus/registry';
 import { npcRoleTagsForName } from '../../data/npcProfiles';
-import { recordFirstWeekScenarioCompletion } from '../life/firstWeekProgress';
 import { writeTelemetryForProfile } from '../research/telemetry';
 import { contentPacks, getScenario } from './registry';
 import { buildScenarioCandidates, selectScenario } from './controller';
+import { completeScenarioRun } from './completion';
 
 const MAX_RECENT_SCENARIOS = 8;
-const MAX_COMPLETED_SCENARIOS = 256;
 
 const knownPackIds = new Set(contentPacks.map((pack) => pack.id));
 
@@ -39,11 +43,6 @@ const lifeSnapshotFromDocument = (profile: any): LifeProfileSnapshot => ({
   careerStage: profile.careerStage,
   universityProfileId: profile.universityProfileId,
 });
-
-const uniqueCompleted = (completed: string[], scenarioId: string) => {
-  if (completed.includes(scenarioId)) return completed;
-  return [...completed, scenarioId].slice(-MAX_COMPLETED_SCENARIOS);
-};
 
 const pushRecent = (recent: string[], scenarioId: string) =>
   [...recent, scenarioId].slice(-MAX_RECENT_SCENARIOS);
@@ -257,6 +256,10 @@ export const enterScenarioLocation = mutation({
 
     const profile = await ctx.db.get(runtime.profileId);
     if (!profile) throw new Error('Life profile not found');
+    const profileState =
+      profile.state && typeof profile.state === 'object' ? profile.state : {};
+    const clock = getDayClock(profileState, makeDayClockKey(profile));
+    const remainingMinutes = minutesRemainingInDay(clock);
 
     await writeTelemetryForProfile(ctx, runtime.profileId, {
       eventType: 'movement',
@@ -294,6 +297,7 @@ export const enterScenarioLocation = mutation({
       recentScenarioIds: runtime.recentScenarioIds,
       completedScenarioIds: runtime.completedScenarioIds,
       sensitiveResearchConsent: runtime.sensitiveResearchConsent,
+      remainingMinutes,
       seed: runtime.seed,
       selectionIndex: runtime.selectionIndex,
     };
@@ -329,6 +333,8 @@ export const enterScenarioLocation = mutation({
       scenarioId: selected.scenario.id,
       locationId,
       startedAt: now,
+      startedAtGameMinute: clock.minute,
+      estimatedMinutes: selected.scenario.estimatedMinutes,
       selectionIndex: runtime.selectionIndex,
       selectionReasons: selected.reasons,
       candidateCount: candidates.length,
@@ -350,10 +356,20 @@ export const enterScenarioLocation = mutation({
       action: 'scenario_started',
       sceneId: selected.scenario.id,
       locationId,
-      payload: { assignedNpcCount: npcAssignments.length },
+      payload: {
+        assignedNpcCount: npcAssignments.length,
+        estimatedMinutes: selected.scenario.estimatedMinutes,
+        startedAtGameMinute: clock.minute,
+      },
     });
 
-    return { locationId, scenario: selected.scenario, npcAssignments, changed: true };
+    return {
+      locationId,
+      scenario: selected.scenario,
+      npcAssignments,
+      changed: true,
+      startedAtGameMinute: clock.minute,
+    };
   },
 });
 
@@ -362,49 +378,10 @@ export const completeActiveScenario = mutation({
     runtimeId: v.id('scenarioRuntimeStates'),
     outcome: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
-    const runtime = await ctx.db.get(args.runtimeId);
-    if (!runtime) throw new Error('Scenario runtime not found');
-    if (!runtime.activeScenarioId) return null;
-
-    const now = Date.now();
-    const completedScenarioId = runtime.activeScenarioId;
-    const scenario = getScenario(completedScenarioId);
-    const outcome = args.outcome ?? 'completed';
-    if (runtime.activeRunId) {
-      await ctx.db.patch(runtime.activeRunId, {
-        endedAt: now,
-        outcome,
-      });
-    }
-
-    const completedScenarioIds = uniqueCompleted(
-      runtime.completedScenarioIds,
-      completedScenarioId,
-    );
-
-    await ctx.db.patch(args.runtimeId, {
-      activeScenarioId: undefined,
-      activeRunId: undefined,
-      completedScenarioIds,
-      updatedAt: now,
-    });
-
-    await recordFirstWeekScenarioCompletion(
-      ctx,
-      runtime.profileId,
-      completedScenarioId,
-      scenario?.researchUse === 'none',
-    );
-    await writeTelemetryForProfile(ctx, runtime.profileId, {
-      eventType: 'scene_exit',
-      action: outcome,
-      sceneId: completedScenarioId,
-      locationId: runtime.activeLocationId,
-    });
-
-    return completedScenarioId;
-  },
+  handler: async (ctx, args) =>
+    await completeScenarioRun(ctx, args.runtimeId, {
+      outcome: args.outcome ?? 'completed',
+    }),
 });
 
 export const leaveScenarioLocation = mutation({
