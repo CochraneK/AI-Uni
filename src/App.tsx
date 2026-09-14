@@ -33,16 +33,17 @@ export default function Home() {
         <div className="font-body">
           <h1 className="text-center text-6xl font-bold font-display game-title">AI-Uni</h1>
           <p>
-            欢迎来到 AI-Uni。这是一个以大学日常生活为主体、逐步建设北交大校园与校外生活场景的 LLM 多智能体研究原型。
-            项目基于上游 AI Town 引擎扩展，你可以观察 NPC，也可以进入世界与他们聊天、上课、做小组作业、参加活动和处理各种日常事件。
+            欢迎来到 AI-Uni。这是一个以广泛意义上的大学生活为起点，并逐步延伸到毕业、工作、关系、家庭与整个人生历程的 LLM 多智能体世界。
+            默认世界不绑定某一所真实大学；未来可以加载北交大等特定大学模板，替换地图、地点显示名、校园文化和专属事件，同时保持同一套人生与研究底层。
           </p>
           <h2 className="text-4xl mt-4">怎么玩</h2>
           <p>
             点击地图移动，拖动画面浏览校园，滚轮缩放。点击角色可以查看对话；进入互动模式后，可以接近角色并发起谈话。
+            课程、朋友、社团、住宿或通勤、考试、假期、实习等内容会随着人生阶段逐步展开。
           </p>
           <h2 className="text-4xl mt-4">研究说明</h2>
           <p>
-            研究版本可能在取得知情同意后记录移动、选择、互动、对话以及反应时间，用于研究校园与日常生活情境中的行为模式。
+            研究版本可能在取得知情同意后记录移动、选择、互动、对话以及反应时间，用于研究大学与长期生活情境中的行为模式。
             游戏内行为不会被直接解释为 PCL-5、CAPE-P15 或人格量表的正式分数，也不会用于自动诊断。
           </p>
           <p className="mt-4">
@@ -65,7 +66,7 @@ export default function Home() {
         </h1>
 
         <div className="max-w-xs md:max-w-xl lg:max-w-none mx-auto my-4 text-center text-base sm:text-xl md:text-2xl text-white leading-tight shadow-solid">
-          大学生活世界 × LLM NPC × 情境行为研究
+          大学生活世界 × LLM NPC × 人生历程 × 情境行为研究
         </div>
 
         <Game />
