@@ -2,6 +2,7 @@ import { v } from 'convex/values';
 import { internalAction } from '../_generated/server';
 import { WorldMap, serializedWorldMap } from './worldMap';
 import { rememberConversation } from '../agent/memory';
+import { deepSeekConversationMessage } from '../agent/deepseekConversation';
 import { GameId, agentId, conversationId, playerId } from './ids';
 import {
   continueConversationMessage,
@@ -14,7 +15,12 @@ import { ACTIVITIES, ACTIVITY_COOLDOWN, CONVERSATION_COOLDOWN } from '../constan
 import { api, internal } from '../_generated/api';
 import { sleep } from '../util/sleep';
 import { serializedPlayer } from './player';
-import { scriptedAgentMessage, shouldUseScriptedNpcFallback } from './llmFallback';
+import {
+  hasDeepSeekChat,
+  scriptedAgentMessage,
+  shouldUseScriptedNpcFallback,
+  shouldUseSemanticNpcMemory,
+} from './llmFallback';
 
 export const agentRememberConversation = internalAction({
   args: {
@@ -25,12 +31,10 @@ export const agentRememberConversation = internalAction({
     operationId: v.string(),
   },
   handler: async (ctx, args) => {
-    // Convex actions execute inside the deployment. The inherited AI Town
-    // default points Ollama at 127.0.0.1, which is the Convex worker rather
-    // than the developer's laptop. In scripted fallback mode we intentionally
-    // skip semantic memory generation instead of issuing a request that can
-    // never succeed.
-    if (!shouldUseScriptedNpcFallback()) {
+    // Conversation memory is optional. In scripted mode, and in DeepSeek-only
+    // mode without a separate embeddings provider, skip semantic memory rather
+    // than blocking otherwise-working NPC chat.
+    if (shouldUseSemanticNpcMemory()) {
       await rememberConversation(
         ctx,
         args.worldId,
@@ -72,6 +76,14 @@ export const agentGenerateMessage = internalAction({
         conversationId: args.conversationId,
       });
       text = scriptedAgentMessage(args.type, args.operationId, promptData.scenarioContext);
+    } else if (hasDeepSeekChat()) {
+      text = await deepSeekConversationMessage(ctx, {
+        worldId: args.worldId,
+        conversationId: args.conversationId as GameId<'conversations'>,
+        playerId: args.playerId as GameId<'players'>,
+        otherPlayerId: args.otherPlayerId as GameId<'players'>,
+        type: args.type,
+      });
     } else {
       let completionFn;
       switch (args.type) {
