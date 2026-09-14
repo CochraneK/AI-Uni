@@ -38,6 +38,7 @@ const getOrCreateProgress = async (ctx: any, profileId: any) => {
     completedDays: inferredCompletedDays(profile),
     completedScenarioIds: [],
     ordinaryScenarioIds: [],
+    ordinaryActivityIds: [],
     distinctNpcIds: [],
     createdAt: now,
     updatedAt: now,
@@ -65,6 +66,24 @@ export const recordFirstWeekScenarioCompletion = async (
   await ctx.db.patch(progress._id, {
     completedScenarioIds,
     ordinaryScenarioIds,
+    updatedAt: Date.now(),
+  });
+  return true;
+};
+
+export const recordFirstWeekOrdinaryActivity = async (
+  ctx: any,
+  profileId: any,
+  activityId: string,
+) => {
+  const profile = await ctx.db.get(profileId);
+  if (!profile || profile.chapterId !== 'university_first_week') return false;
+
+  const progress = await getOrCreateProgress(ctx, profileId);
+  if (!progress) return false;
+
+  await ctx.db.patch(progress._id, {
+    ordinaryActivityIds: uniqueAppend(progress.ordinaryActivityIds ?? [], activityId),
     updatedAt: Date.now(),
   });
   return true;
@@ -128,7 +147,9 @@ export const evaluateFirstWeekReadiness = async (
     : completedDays;
   const completedCoreEvents = progress?.completedScenarioIds.length ?? 0;
   const distinctNpcInteractions = progress?.distinctNpcIds.length ?? 0;
-  const ordinaryLifeCompleted = (progress?.ordinaryScenarioIds.length ?? 0) > 0;
+  const ordinaryLifeCompleted =
+    (progress?.ordinaryScenarioIds.length ?? 0) > 0 ||
+    (progress?.ordinaryActivityIds?.length ?? 0) > 0;
 
   const missing: string[] = [];
   if (effectiveDays.length < firstWeekEndCondition.requiredPlayableDays) {
@@ -147,7 +168,7 @@ export const evaluateFirstWeekReadiness = async (
     );
   }
   if (firstWeekEndCondition.requireOrdinaryLifeCompletion && !ordinaryLifeCompleted) {
-    missing.push('还需要完成至少一个纯日常生活事件');
+    missing.push('还需要完成至少一次普通校园生活体验');
   }
 
   return {
