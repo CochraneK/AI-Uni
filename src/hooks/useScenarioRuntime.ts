@@ -9,8 +9,8 @@ import { findLocationAtPosition } from '../../convex/world/zones';
 import type { ServerGame } from './serverGame';
 
 export function useScenarioRuntime(args: {
-  worldId: Id<'worlds'>;
-  game: ServerGame;
+  worldId?: Id<'worlds'>;
+  game?: ServerGame;
   humanPlayerId?: GameId<'players'>;
   humanTokenIdentifier: string | null;
 }) {
@@ -32,7 +32,7 @@ export function useScenarioRuntime(args: {
 
   const creatingProfile = useRef(false);
   useEffect(() => {
-    if (!profileKey || profile !== null || creatingProfile.current) return;
+    if (!args.worldId || !profileKey || profile !== null || creatingProfile.current) return;
     creatingProfile.current = true;
     void createLifeProfile({
       profileKey,
@@ -47,7 +47,7 @@ export function useScenarioRuntime(args: {
 
   const creatingRuntime = useRef(false);
   useEffect(() => {
-    if (!profile || runtime !== null || creatingRuntime.current) return;
+    if (!args.worldId || !profile || runtime !== null || creatingRuntime.current) return;
     creatingRuntime.current = true;
     void createScenarioRuntime({
       profileId: profile._id,
@@ -61,19 +61,21 @@ export function useScenarioRuntime(args: {
       });
   }, [args.worldId, createScenarioRuntime, profile, runtime]);
 
-  const player = args.humanPlayerId
-    ? args.game.world.players.get(args.humanPlayerId)
-    : undefined;
+  const player =
+    args.game && args.humanPlayerId
+      ? args.game.world.players.get(args.humanPlayerId)
+      : undefined;
   const universityProfile = getUniversityProfile(profile?.universityProfileId ?? 'generic_university');
-  const locationId = player
-    ? findLocationAtPosition(
-        player.position.x,
-        player.position.y,
-        args.game.worldMap.width,
-        args.game.worldMap.height,
-        universityProfile?.mapId,
-      )
-    : undefined;
+  const locationId =
+    player && args.game
+      ? findLocationAtPosition(
+          player.position.x,
+          player.position.y,
+          args.game.worldMap.width,
+          args.game.worldMap.height,
+          universityProfile?.mapId,
+        )
+      : undefined;
 
   const lastSyncedLocation = useRef<string | undefined>();
   const lastRuntimeId = useRef<string | undefined>();
@@ -112,3 +114,5 @@ export function useScenarioRuntime(args: {
     universityProfile,
   };
 }
+
+export type ScenarioRuntimeView = ReturnType<typeof useScenarioRuntime>;
