@@ -1,5 +1,6 @@
 import { v } from 'convex/values';
 import { mutation, query } from '../_generated/server';
+import { defaultLifeProfile } from '../life/model';
 import type { LifeProfileSnapshot, RelationshipType } from '../life/types';
 import type { WorldLocationId } from '../world/locations';
 import { worldLocations } from '../world/locations';
@@ -23,6 +24,7 @@ const defaultPackIdsForProfile = (universityProfileId?: string) => {
 };
 
 const lifeSnapshotFromDocument = (profile: any): LifeProfileSnapshot => ({
+  ...defaultLifeProfile,
   ...((profile.state && typeof profile.state === 'object' ? profile.state : {}) as Partial<LifeProfileSnapshot>),
   age: profile.age,
   season: profile.season,
