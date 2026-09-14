@@ -6,6 +6,7 @@ export const lifeTables = {
     profileKey: v.string(),
     worldId: v.optional(v.id('worlds')),
     sessionId: v.optional(v.id('researchSessions')),
+    universityProfileId: v.string(),
     age: v.number(),
     season: v.string(),
     lifeStage: v.string(),
@@ -20,7 +21,8 @@ export const lifeTables = {
   })
     .index('byProfileKey', ['profileKey'])
     .index('byWorld', ['worldId'])
-    .index('bySession', ['sessionId']),
+    .index('bySession', ['sessionId'])
+    .index('byUniversityProfile', ['universityProfileId']),
 
   familySystemStates: defineTable({
     profileId: v.id('lifeProfiles'),
