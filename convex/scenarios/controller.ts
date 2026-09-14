@@ -86,34 +86,40 @@ export const buildScenarioCandidates = (
   const runnable = allScenarios.filter((scenario) => scenarioCanRun(scenario, context));
   const hasNonRecentAlternative = runnable.some((scenario) => !recentSet.has(scenario.id));
 
-  return runnable.map((scenario) => {
-    const reasons: string[] = [];
-    let weight = researchWeight(scenario) * safetyWeight(scenario);
+  return runnable
+    .map((scenario) => {
+      const reasons: string[] = [];
+      let weight = researchWeight(scenario) * safetyWeight(scenario);
 
-    if (scenario.researchUse === 'none') reasons.push('ordinary-life-priority');
-    if (scenario.researchUse !== 'none' && recentResearchCount >= 3) {
-      weight *= 0.35;
-      reasons.push('research-density-penalty');
-    }
+      if (scenario.researchUse === 'none') reasons.push('ordinary-life-priority');
+      if (scenario.researchUse !== 'none' && recentResearchCount >= 3) {
+        weight *= 0.35;
+        reasons.push('research-density-penalty');
+      }
 
-    if (recentSet.has(scenario.id) && hasNonRecentAlternative) {
-      weight *= 0.08;
-      reasons.push('recent-repeat-penalty');
-    }
+      if (recentSet.has(scenario.id) && hasNonRecentAlternative) {
+        weight *= 0.08;
+        reasons.push('recent-repeat-penalty');
+      }
 
-    const lastScenario = recentScenarios.at(-1);
-    if (lastScenario?.packId === scenario.packId && runnable.some((candidate) => candidate.packId !== scenario.packId)) {
-      weight *= 0.7;
-      reasons.push('pack-diversity-penalty');
-    }
+      const lastScenario =
+        recentScenarios.length > 0 ? recentScenarios[recentScenarios.length - 1] : undefined;
+      if (
+        lastScenario?.packId === scenario.packId &&
+        runnable.some((candidate) => candidate.packId !== scenario.packId)
+      ) {
+        weight *= 0.7;
+        reasons.push('pack-diversity-penalty');
+      }
 
-    if (context.completedScenarioIds?.includes(scenario.id) && scenario.tags.includes('one-shot')) {
-      weight = 0;
-      reasons.push('one-shot-completed');
-    }
+      if (context.completedScenarioIds?.includes(scenario.id) && scenario.tags.includes('one-shot')) {
+        weight = 0;
+        reasons.push('one-shot-completed');
+      }
 
-    return { scenario, weight, reasons };
-  }).filter((candidate) => candidate.weight > 0);
+      return { scenario, weight, reasons };
+    })
+    .filter((candidate) => candidate.weight > 0);
 };
 
 export const selectScenario = (
