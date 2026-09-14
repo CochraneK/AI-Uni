@@ -38,11 +38,38 @@ export const campusActivityHotspots: CampusActivityHotspot[] = Object.entries(zo
 
 type HotspotProps = {
   tileDim: number;
+  recommendedLocationId?: CampusLocationId;
   onNavigate: (locationId: CampusLocationId, destination: CampusHotspotDestination) => void;
+};
+
+type HotspotNode = PIXI.Container & {
+  aiUniLocationId?: CampusLocationId;
+  aiUniMarker?: PIXI.Graphics;
+  aiUniText?: PIXI.Text;
+  aiUniBaseText?: string;
 };
 
 type HotspotContainer = PIXI.Container & {
   aiUniNavigate?: HotspotProps['onNavigate'];
+};
+
+const applyRecommendation = (
+  root: HotspotContainer,
+  recommendedLocationId?: CampusLocationId,
+) => {
+  for (const child of root.children) {
+    const node = child as HotspotNode;
+    const recommended = Boolean(
+      recommendedLocationId && node.aiUniLocationId === recommendedLocationId,
+    );
+    node.alpha = recommendedLocationId ? (recommended ? 1 : 0.78) : 1;
+    if (node.aiUniMarker) {
+      node.aiUniMarker.tint = recommended ? 0xffd76a : 0xffffff;
+    }
+    if (node.aiUniText && node.aiUniBaseText) {
+      node.aiUniText.text = recommended ? `★ ${node.aiUniBaseText}` : node.aiUniBaseText;
+    }
+  }
 };
 
 export const CampusActivityHotspots = PixiComponent<HotspotProps, HotspotContainer>(
@@ -53,20 +80,23 @@ export const CampusActivityHotspots = PixiComponent<HotspotProps, HotspotContain
       root.aiUniNavigate = props.onNavigate;
 
       for (const hotspot of campusActivityHotspots) {
-        const node = new PIXI.Container();
+        const node = new PIXI.Container() as HotspotNode;
         node.x = (hotspot.anchor.x + 0.5) * props.tileDim;
         node.y = (hotspot.anchor.y + 0.5) * props.tileDim;
         node.eventMode = 'static';
         node.cursor = 'pointer';
+        node.aiUniLocationId = hotspot.locationId;
 
         const marker = new PIXI.Graphics();
         marker.lineStyle(2, 0xffe4a8, 0.95);
         marker.beginFill(0x3f2d24, 0.88);
-        marker.drawRoundedRect(-30, -14, 60, 28, 9);
+        marker.drawRoundedRect(-34, -14, 68, 28, 9);
         marker.endFill();
+        node.aiUniMarker = marker;
         node.addChild(marker);
 
-        const text = new PIXI.Text(`${hotspot.label} · ${hotspot.activityCount}`, {
+        const baseText = `${hotspot.label} · ${hotspot.activityCount}`;
+        const text = new PIXI.Text(baseText, {
           fontFamily: 'sans-serif',
           fontSize: 10,
           fontWeight: '600',
@@ -75,6 +105,8 @@ export const CampusActivityHotspots = PixiComponent<HotspotProps, HotspotContain
         });
         text.anchor.set(0.5);
         text.resolution = 2;
+        node.aiUniText = text;
+        node.aiUniBaseText = baseText;
         node.addChild(text);
 
         node.on('pointerover', () => {
@@ -93,10 +125,12 @@ export const CampusActivityHotspots = PixiComponent<HotspotProps, HotspotContain
         root.addChild(node);
       }
 
+      applyRecommendation(root, props.recommendedLocationId);
       return root;
     },
     applyProps: (instance, _oldProps, newProps) => {
       instance.aiUniNavigate = newProps.onNavigate;
+      applyRecommendation(instance, newProps.recommendedLocationId);
     },
   },
 );
