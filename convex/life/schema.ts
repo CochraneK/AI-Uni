@@ -36,6 +36,35 @@ export const lifeTables = {
     updatedAt: v.number(),
   }).index('byProfile', ['profileId']),
 
+  scheduledCommitments: defineTable({
+    profileId: v.id('lifeProfiles'),
+    commitmentKey: v.string(),
+    chapterId: v.string(),
+    chapterUnit: v.number(),
+    kind: v.string(),
+    title: v.string(),
+    locationId: v.string(),
+    startMinute: v.number(),
+    endMinute: v.number(),
+    attendanceRequired: v.boolean(),
+    graceMinutes: v.number(),
+    status: v.union(
+      v.literal('scheduled'),
+      v.literal('attended_on_time'),
+      v.literal('attended_late'),
+      v.literal('missed'),
+      v.literal('skipped'),
+    ),
+    arrivedAtMinute: v.optional(v.number()),
+    resolvedAt: v.optional(v.number()),
+    metadata: v.optional(v.any()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index('byProfileKey', ['profileId', 'commitmentKey'])
+    .index('byProfileChapterUnit', ['profileId', 'chapterId', 'chapterUnit'])
+    .index('byProfileStatus', ['profileId', 'status']),
+
   familySystemStates: defineTable({
     profileId: v.id('lifeProfiles'),
     generation: v.number(),
