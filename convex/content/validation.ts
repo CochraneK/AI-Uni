@@ -1,4 +1,8 @@
 import { constructRegistry } from '../assessment/constructs';
+import {
+  UNIVERSITY_DAY_END_MINUTE,
+  UNIVERSITY_DAY_START_MINUTE,
+} from '../life/dayClock';
 import { worldLocations } from '../world/locations';
 import type { ContentPack } from './types';
 
@@ -14,6 +18,7 @@ export const validateContentPacks = (packs: ContentPack[]): ContentValidationIss
   const issues: ContentValidationIssue[] = [];
   const scenarioIds = new Set<string>();
   const packIds = new Set<string>();
+  const playableDayMinutes = UNIVERSITY_DAY_END_MINUTE - UNIVERSITY_DAY_START_MINUTE;
 
   for (const pack of packs) {
     if (packIds.has(pack.id)) {
@@ -53,6 +58,20 @@ export const validateContentPacks = (packs: ContentPack[]): ContentValidationIss
           level: 'error',
           code: 'unknown_location',
           message: `Unknown location ${scenario.location} in ${scenario.id}.`,
+          packId: pack.id,
+          scenarioId: scenario.id,
+        });
+      }
+
+      if (
+        !Number.isInteger(scenario.estimatedMinutes) ||
+        scenario.estimatedMinutes <= 0 ||
+        scenario.estimatedMinutes > playableDayMinutes
+      ) {
+        issues.push({
+          level: 'error',
+          code: 'invalid_estimated_minutes',
+          message: `${scenario.id} estimatedMinutes must be a positive integer no longer than one playable day (${playableDayMinutes} minutes).`,
           packId: pack.id,
           scenarioId: scenario.id,
         });
