@@ -14,6 +14,7 @@ import { ACTIVITIES, ACTIVITY_COOLDOWN, CONVERSATION_COOLDOWN } from '../constan
 import { api, internal } from '../_generated/api';
 import { sleep } from '../util/sleep';
 import { serializedPlayer } from './player';
+import { scriptedAgentMessage, shouldUseScriptedNpcFallback } from './llmFallback';
 
 export const agentRememberConversation = internalAction({
   args: {
@@ -24,13 +25,20 @@ export const agentRememberConversation = internalAction({
     operationId: v.string(),
   },
   handler: async (ctx, args) => {
-    await rememberConversation(
-      ctx,
-      args.worldId,
-      args.agentId as GameId<'agents'>,
-      args.playerId as GameId<'players'>,
-      args.conversationId as GameId<'conversations'>,
-    );
+    // Convex actions execute inside the deployment. The inherited AI Town
+    // default points Ollama at 127.0.0.1, which is the Convex worker rather
+    // than the developer's laptop. In scripted fallback mode we intentionally
+    // skip semantic memory generation instead of issuing a request that can
+    // never succeed.
+    if (!shouldUseScriptedNpcFallback()) {
+      await rememberConversation(
+        ctx,
+        args.worldId,
+        args.agentId as GameId<'agents'>,
+        args.playerId as GameId<'players'>,
+        args.conversationId as GameId<'conversations'>,
+      );
+    }
     await sleep(Math.random() * 1000);
     await ctx.runMutation(api.aiTown.main.sendInput, {
       worldId: args.worldId,
@@ -55,27 +63,38 @@ export const agentGenerateMessage = internalAction({
     messageUuid: v.string(),
   },
   handler: async (ctx, args) => {
-    let completionFn;
-    switch (args.type) {
-      case 'start':
-        completionFn = startConversationMessage;
-        break;
-      case 'continue':
-        completionFn = continueConversationMessage;
-        break;
-      case 'leave':
-        completionFn = leaveConversationMessage;
-        break;
-      default:
-        assertNever(args.type);
+    let text: string;
+    if (shouldUseScriptedNpcFallback()) {
+      const promptData = await ctx.runQuery(internal.agent.conversation.queryPromptData, {
+        worldId: args.worldId,
+        playerId: args.playerId,
+        otherPlayerId: args.otherPlayerId,
+        conversationId: args.conversationId,
+      });
+      text = scriptedAgentMessage(args.type, args.operationId, promptData.scenarioContext);
+    } else {
+      let completionFn;
+      switch (args.type) {
+        case 'start':
+          completionFn = startConversationMessage;
+          break;
+        case 'continue':
+          completionFn = continueConversationMessage;
+          break;
+        case 'leave':
+          completionFn = leaveConversationMessage;
+          break;
+        default:
+          assertNever(args.type);
+      }
+      text = await completionFn(
+        ctx,
+        args.worldId,
+        args.conversationId as GameId<'conversations'>,
+        args.playerId as GameId<'players'>,
+        args.otherPlayerId as GameId<'players'>,
+      );
     }
-    const text = await completionFn(
-      ctx,
-      args.worldId,
-      args.conversationId as GameId<'conversations'>,
-      args.playerId as GameId<'players'>,
-      args.otherPlayerId as GameId<'players'>,
-    );
 
     await ctx.runMutation(internal.aiTown.agent.agentSendMessage, {
       worldId: args.worldId,
