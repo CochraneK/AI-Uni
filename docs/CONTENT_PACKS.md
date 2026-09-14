@@ -1,9 +1,9 @@
 # AI-Uni Content Pack / Assessment Extension Guide
 
-AI-Uni intentionally separates world simulation, lifespan state, content, telemetry and assessment so the project can grow without turning every feature into a hard-coded psychological test.
+AI-Uni intentionally separates university profile, world simulation, lifespan state, content, telemetry and assessment so the project can grow without turning every feature into a hard-coded psychological test.
 
 ```text
-World locations + life-course state
+UniversityProfile + World locations + Life-course state
     ↓
 Content packs / scenarios
     ↓
@@ -88,18 +88,68 @@ Examples:
 
 Life-stage gating controls plausibility, not psychological interpretation.
 
-## 3. Locations
+## 3. Generic locations
 
-Campus locations remain in `convex/campus/config.ts`.
+Core campus locations live in `convex/campus/config.ts` and use stable function-oriented IDs:
 
-`convex/world/locations.ts` aggregates those locations with off-campus locations. New maps can be introduced later without changing the scenario model.
+```text
+campus_gate
+teaching_building
+library
+student_center
+cafeteria
+campus_green
+sports_field
+dormitory
+```
+
+`convex/world/locations.ts` aggregates those locations with off-campus locations.
 
 A location has a `mapStatus`:
 
 - `playable`: currently present in the game world.
 - `planned`: content may be authored now, but should not enter the default runtime pool until the map/transition exists.
 
-## 4. Construct Registry
+Content authors should reference the generic IDs rather than a specific university's building names.
+
+## 4. University profiles and templates
+
+University-level differences live in:
+
+```text
+convex/campus/profiles.ts
+convex/campus/registry.ts
+convex/campus/templates/
+```
+
+The default profile is `generic_university`.
+
+A specific template may override:
+
+- player-facing location names;
+- map/theme assets;
+- academic calendar and program length;
+- residential vs commuter structure;
+- institution type and urbanicity;
+- school-specific content packs.
+
+Example:
+
+```text
+Generic scenario:
+location: teaching_building
+
+Optional BJTU-inspired template display:
+teaching_building → 思源教学区
+```
+
+The scenario itself is unchanged.
+
+When authoring a real-university pack, separate broadly applicable university events from school-specific content. A tradition, named building, campus festival, special regulation or school-specific organization should live in the template pack, not `campus-life`.
+
+See [`UNIVERSITY_CORE.md`](UNIVERSITY_CORE.md).
+
+## 5. Construct Registry
 
 `convex/assessment/constructs.ts` owns semantic research targets.
 
@@ -120,7 +170,7 @@ A construct is not automatically a questionnaire score. It is a research concept
 
 The lifespan layer also has a separate candidate-signal registry in `convex/life/signals.ts` for identity, family, relationship, network, adaptation, resilience and meaning signals. These are not formal questionnaire scores.
 
-## 5. Assessment Measure Registry
+## 6. Assessment Measure Registry
 
 `convex/assessment/measures.ts` is separate from both the construct registry and life-world state.
 
@@ -141,7 +191,7 @@ To add another questionnaire/test:
 
 The database uses `instrument: string`, so adding another instrument no longer requires changing the Convex schema.
 
-## 6. Safety / validation rules
+## 7. Safety / validation rules
 
 `convex/content/validation.ts` checks key invariants:
 
@@ -155,7 +205,7 @@ The database uses `instrument: string`, so adding another instrument no longer r
 
 Sensitive research content should additionally have study-specific ethics approval, consent, opt-out and risk/referral procedures before activation.
 
-## 7. Desired long-term shape
+## 8. Desired long-term shape
 
 The world should stay mostly ordinary life. A useful operating target is roughly:
 
@@ -165,7 +215,12 @@ The world should stay mostly ordinary life. A useful operating target is roughly
 
 As AI-Uni expands from university to work, family and retirement, this ratio should remain a design target. The lifespan system exists to make the world deeper, not to make every life event an assessment probe.
 
-See also [`LIFE_COURSE_MODEL.md`](LIFE_COURSE_MODEL.md).
+Specific university templates should enrich ordinary life rather than increase assessment density.
+
+See also:
+
+- [`UNIVERSITY_CORE.md`](UNIVERSITY_CORE.md)
+- [`LIFE_COURSE_MODEL.md`](LIFE_COURSE_MODEL.md)
 
 ## Upstream
 
