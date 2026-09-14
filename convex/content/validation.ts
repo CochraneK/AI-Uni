@@ -1,4 +1,5 @@
 import { constructRegistry } from '../assessment/constructs';
+import { parseClockTime } from '../campus/schedule';
 import {
   UNIVERSITY_DAY_END_MINUTE,
   UNIVERSITY_DAY_START_MINUTE,
@@ -74,6 +75,56 @@ export const validateContentPacks = (packs: ContentPack[]): ContentValidationIss
           message: `${scenario.id} estimatedMinutes must be a positive integer no longer than one playable day (${playableDayMinutes} minutes).`,
           packId: pack.id,
           scenarioId: scenario.id,
+        });
+      }
+
+      if (scenario.timeWindows) {
+        if (scenario.timeWindows.length === 0) {
+          issues.push({
+            level: 'error',
+            code: 'empty_time_windows',
+            message: `${scenario.id} declares an empty timeWindows list.`,
+            packId: pack.id,
+            scenarioId: scenario.id,
+          });
+        }
+
+        scenario.timeWindows.forEach((window, index) => {
+          const start = parseClockTime(window.start);
+          const end = parseClockTime(window.end);
+          if (start === undefined || end === undefined) {
+            issues.push({
+              level: 'error',
+              code: 'invalid_time_window_format',
+              message: `${scenario.id} time window #${index + 1} must use valid HH:MM values.`,
+              packId: pack.id,
+              scenarioId: scenario.id,
+            });
+            return;
+          }
+          if (
+            start < UNIVERSITY_DAY_START_MINUTE ||
+            end > UNIVERSITY_DAY_END_MINUTE ||
+            start >= end
+          ) {
+            issues.push({
+              level: 'error',
+              code: 'invalid_time_window_bounds',
+              message: `${scenario.id} time window ${window.start}-${window.end} must stay within the playable day and end after it starts.`,
+              packId: pack.id,
+              scenarioId: scenario.id,
+            });
+            return;
+          }
+          if (end - start < scenario.estimatedMinutes) {
+            issues.push({
+              level: 'error',
+              code: 'time_window_too_short',
+              message: `${scenario.id} time window ${window.start}-${window.end} is shorter than its ${scenario.estimatedMinutes}-minute scene duration.`,
+              packId: pack.id,
+              scenarioId: scenario.id,
+            });
+          }
         });
       }
 
