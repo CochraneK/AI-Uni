@@ -6,13 +6,17 @@ describe('first-week progress evaluation', () => {
       chapterId: 'university_first_week',
       chapterUnit: 3,
     };
+    let getCalls = 0;
     const db = {
-      query: jest.fn(() => ({
-        withIndex: jest.fn(() => ({
-          first: jest.fn(async () => null),
-        })),
-      })),
-      get: jest.fn(async () => profile),
+      query: () => ({
+        withIndex: () => ({
+          first: async () => null,
+        }),
+      }),
+      get: async () => {
+        getCalls += 1;
+        return profile;
+      },
       // Intentionally no insert/patch methods: query handlers do not expose them.
     };
 
@@ -23,6 +27,6 @@ describe('first-week progress evaluation', () => {
     expect(readiness.distinctNpcInteractions).toBe(0);
     expect(readiness.ordinaryLifeCompleted).toBe(false);
     expect(readiness.ready).toBe(false);
-    expect(db.get).toHaveBeenCalledTimes(1);
+    expect(getCalls).toBe(1);
   });
 });
