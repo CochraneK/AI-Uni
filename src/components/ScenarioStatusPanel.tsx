@@ -5,7 +5,11 @@ import type { GameId } from '../../convex/aiTown/ids';
 import { resolveCampusDisplayName } from '../../convex/campus/registry';
 import { getUniversityScheduleMoment } from '../../convex/campus/schedule';
 import { worldLocations } from '../../convex/world/locations';
-import { campusActivityRules, getCampusActivities } from '../../convex/life/activities';
+import {
+  campusActivityRules,
+  getCampusActivities,
+  getCampusActivity,
+} from '../../convex/life/activities';
 import {
   canSpendMinutes,
   formatGameMinute,
@@ -13,11 +17,14 @@ import {
   makeDayClockKey,
   minutesRemainingInDay,
 } from '../../convex/life/dayClock';
+import { genericCampusInteractableByActivityId } from '../../data/genericCampusInteractables';
 import type { ScenarioRuntimeView } from '../hooks/useScenarioRuntime';
 
 export default function ScenarioStatusPanel(props: {
   humanPlayerId?: GameId<'players'>;
   scenarioRuntime: ScenarioRuntimeView;
+  focusedActivityId?: string;
+  onFocusActivity?: (activityId?: string) => void;
 }) {
   const [dayEndMessage, setDayEndMessage] = useState<string>();
   const [activityMessage, setActivityMessage] = useState<string>();
@@ -43,6 +50,25 @@ export default function ScenarioStatusPanel(props: {
   const isFirstWeek = profile?.chapterId === 'university_first_week';
   const isFinalFirstWeekDay = isFirstWeek && profile?.chapterUnit === 7;
   const activities = !activeScenario && locationId ? getCampusActivities(locationId) : [];
+  const focusedActivity = props.focusedActivityId
+    ? getCampusActivity(props.focusedActivityId)
+    : undefined;
+  const focusedInteractable = props.focusedActivityId
+    ? genericCampusInteractableByActivityId[props.focusedActivityId]
+    : undefined;
+  const focusedActivityHere = Boolean(
+    focusedActivity && locationId && focusedActivity.locationId === locationId,
+  );
+  const focusedLocationName = focusedActivity
+    ? universityProfile
+      ? resolveCampusDisplayName(
+          universityProfile,
+          focusedActivity.locationId,
+          worldLocations[focusedActivity.locationId]?.name ?? focusedActivity.locationId,
+        )
+      : worldLocations[focusedActivity.locationId]?.name
+    : undefined;
+
   const currentDayKey = profile ? makeDayClockKey(profile) : undefined;
   const dayClock = profile && currentDayKey ? getDayClock(profile.state, currentDayKey) : undefined;
   const scheduleMoment = dayClock ? getUniversityScheduleMoment(dayClock.minute) : undefined;
@@ -108,6 +134,28 @@ export default function ScenarioStatusPanel(props: {
           </span>
         )}
       </div>
+
+      {focusedActivity && !activeScenario && (
+        <div className="mt-3 rounded border border-brown-600 bg-brown-800/70 px-3 py-2 text-xs leading-5 text-brown-200">
+          <div className="flex items-center justify-between gap-3">
+            <span className="font-semibold text-brown-100">
+              地图选择：{focusedInteractable?.label ?? focusedActivity.title}
+            </span>
+            <button
+              className="text-brown-400 hover:text-brown-200"
+              onClick={() => props.onFocusActivity?.(undefined)}
+            >
+              取消
+            </button>
+          </div>
+          <div>{focusedActivity.title} · 约 {focusedActivity.estimatedMinutes} 分钟</div>
+          <div className="text-brown-400">
+            {focusedActivityHere
+              ? '已经到达对应区域，可以在下面直接开始。'
+              : `正在前往${focusedLocationName ?? '对应区域'}；到达后可开始这个活动。`}
+          </div>
+        </div>
+      )}
 
       {scheduleMoment?.current && (
         <div className="mt-3 rounded border border-brown-700 bg-brown-800/50 px-3 py-2 text-xs leading-5 text-brown-300">
@@ -215,6 +263,7 @@ export default function ScenarioStatusPanel(props: {
               <div className="mt-2 grid gap-2">
                 {activities.map((activity) => {
                   const completed = completedActivityIds.includes(activity.id);
+                  const focused = activity.id === props.focusedActivityId;
                   const fitsToday = dayClock
                     ? canSpendMinutes(dayClock, activity.estimatedMinutes)
                     : true;
@@ -226,7 +275,11 @@ export default function ScenarioStatusPanel(props: {
                   return (
                     <button
                       key={activity.id}
-                      className="rounded border border-brown-700 px-3 py-2 text-left hover:bg-brown-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      className={`rounded border px-3 py-2 text-left hover:bg-brown-700 disabled:cursor-not-allowed disabled:opacity-50 ${
+                        focused
+                          ? 'border-brown-400 bg-brown-800/80'
+                          : 'border-brown-700'
+                      }`}
                       disabled={disabled}
                       onClick={() => {
                         setActivityMessage(undefined);
@@ -235,7 +288,12 @@ export default function ScenarioStatusPanel(props: {
                           profileId: profile._id,
                           activityId: activity.id,
                         })
-                          .then((result) => setActivityMessage(result.message))
+                          .then((result) => {
+                            setActivityMessage(result.message);
+                            if (result.performed && focused) {
+                              props.onFocusActivity?.(undefined);
+                            }
+                          })
                           .catch((error) => {
                             console.error('Failed to perform AI-Uni campus activity', error);
                             setActivityMessage('这件事现在做不了，换个位置再试试。');
@@ -244,7 +302,7 @@ export default function ScenarioStatusPanel(props: {
                       }}
                     >
                       <div className="flex items-center justify-between gap-3 text-sm font-semibold text-brown-100">
-                        <span>{activity.title}</span>
+                        <span>{focused ? `★ ${activity.title}` : activity.title}</span>
                         <span className="text-xs font-normal text-brown-400">
                           {completed
                             ? '今天做过'
