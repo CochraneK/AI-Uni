@@ -87,7 +87,7 @@ export const p003NarrativeArchetypes: P003NarrativeArchetype[] = [
     name: '归属维系型',
     oneLiner: '很会察觉关系变化，也愿意为“我们还在一起”做很多事。',
     weight: 1.1,
-    roleAffinities: ['caregiver', 'parent', 'sibling', 'peer', 'friend', 'close_friend', 'partner', 'spouse'],
+    roleAffinities: ['caregiver', 'parent', 'sibling', 'peer', 'friend', 'close_friend', 'romantic_partner', 'spouse'],
     valueAffinities: ['belonging', 'care', 'stability'],
     formativePressures: [
       '成长中经历过重要关系的分离或迁移',
@@ -117,7 +117,7 @@ export const p003NarrativeArchetypes: P003NarrativeArchetype[] = [
     name: '自主探索型',
     oneLiner: '更愿意亲自试一条路，再决定它是不是自己的。',
     weight: 1.0,
-    roleAffinities: ['peer', 'friend', 'close_friend', 'partner', 'coworker', 'community'],
+    roleAffinities: ['peer', 'friend', 'close_friend', 'romantic_partner', 'coworker', 'community'],
     valueAffinities: ['autonomy', 'curiosity', 'freedom', 'creativity'],
     formativePressures: [
       '成长环境里存在较强的既定路线或期待',
@@ -147,7 +147,7 @@ export const p003NarrativeArchetypes: P003NarrativeArchetype[] = [
     name: '安全建构型',
     oneLiner: '更相信准备、秩序和可预期性能够保护重要生活。',
     weight: 1.0,
-    roleAffinities: ['caregiver', 'parent', 'teacher', 'coworker', 'manager', 'partner', 'spouse'],
+    roleAffinities: ['caregiver', 'parent', 'teacher', 'coworker', 'manager', 'romantic_partner', 'spouse'],
     valueAffinities: ['security', 'stability', 'achievement'],
     formativePressures: [
       '成长中经历过资源、住房或家庭安排的不稳定',
@@ -177,7 +177,7 @@ export const p003NarrativeArchetypes: P003NarrativeArchetype[] = [
     name: '修复寻路型',
     oneLiner: '不太容易忘记裂痕，但也不轻易相信裂痕只能以离开结束。',
     weight: 0.9,
-    roleAffinities: ['parent', 'sibling', 'friend', 'close_friend', 'partner', 'spouse', 'coworker'],
+    roleAffinities: ['parent', 'sibling', 'friend', 'close_friend', 'romantic_partner', 'spouse', 'coworker'],
     valueAffinities: ['fairness', 'care', 'belonging'],
     formativePressures: [
       '曾经经历过重要关系冲突，却又不得不继续相处',
