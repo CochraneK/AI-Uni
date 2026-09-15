@@ -132,7 +132,6 @@ export const p003StarterEvents: P003LifeEventDefinition[] = [
         label: '先收起来，晚点再说',
         summary: '短期降低刺激，但事情仍会回来。',
         immediate: { stress: -0.02 },
-        delayedHooks: undefined,
       },
     ],
     delayedHooks: ['family_achievement_response', 'study_strategy_update'],
