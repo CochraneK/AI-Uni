@@ -1,9 +1,9 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import PixiGame, { type CampusNavigationRequest } from './PixiGame.tsx';
 
 import { useElementSize } from 'usehooks-ts';
 import { Stage } from '@pixi/react';
-import { ConvexProvider, useConvex, useQuery } from 'convex/react';
+import { ConvexProvider, useConvex, useMutation, useQuery } from 'convex/react';
 import PlayerDetails from './PlayerDetails.tsx';
 import ScenarioStatusPanel from './ScenarioStatusPanel.tsx';
 import CampusTravelStatus from './CampusTravelStatus.tsx';
@@ -15,6 +15,7 @@ import { DebugTimeManager } from './DebugTimeManager.tsx';
 import { GameId } from '../../convex/aiTown/ids.ts';
 import { useServerGame } from '../hooks/serverGame.ts';
 import { useScenarioRuntime } from '../hooks/useScenarioRuntime.ts';
+import { waitForInput } from '../hooks/sendInput.ts';
 
 export const SHOW_DEBUG_UI = !!import.meta.env.VITE_SHOW_DEBUG_UI;
 
@@ -33,10 +34,12 @@ export default function Game() {
   const worldStatus = useQuery(api.world.defaultWorldStatus);
   const worldId = worldStatus?.worldId;
   const engineId = worldStatus?.engineId;
+  const joinWorld = useMutation(api.world.joinWorld);
+  const sendWorldInput = useMutation(api.world.sendWorldInput);
 
   const game = useServerGame(worldId);
-  const humanTokenIdentifier =
-    useQuery(api.world.userStatus, worldId ? { worldId } : 'skip') ?? null;
+  const queriedHumanTokenIdentifier = useQuery(api.world.userStatus, worldId ? { worldId } : 'skip');
+  const humanTokenIdentifier = queriedHumanTokenIdentifier ?? null;
   const humanPlayerId = game
     ? [...game.world.players.values()].find((player) => player.human === humanTokenIdentifier)?.id
     : undefined;
@@ -54,6 +57,42 @@ export default function Game() {
   const { historicalTime, timeManager } = useHistoricalTime(worldState?.engine);
 
   const scrollViewRef = useRef<HTMLDivElement>(null);
+  const autoJoinKey = useRef<string>();
+
+  useEffect(() => {
+    if (
+      !worldId ||
+      !game ||
+      queriedHumanTokenIdentifier === undefined ||
+      humanPlayerId ||
+      autoJoinKey.current === `${worldId}:${humanTokenIdentifier}`
+    ) {
+      return;
+    }
+    autoJoinKey.current = `${worldId}:${humanTokenIdentifier}`;
+    void joinWorld({ worldId })
+      .then((inputId) => (inputId ? waitForInput(convex, inputId) : undefined))
+      .catch((error) => {
+        autoJoinKey.current = undefined;
+        console.error('Failed to auto-join AI-Uni world', error);
+      });
+  }, [convex, game, humanPlayerId, humanTokenIdentifier, joinWorld, queriedHumanTokenIdentifier, worldId]);
+
+  useEffect(() => {
+    if (!engineId || !humanPlayerId) return;
+    const sendKeepAlive = () => {
+      void sendWorldInput({
+        engineId,
+        name: 'keepAlive',
+        args: { playerId: humanPlayerId },
+      })
+        .then((inputId) => waitForInput(convex, inputId))
+        .catch((error) => console.error('Failed to keep AI-Uni player alive', error));
+    };
+    sendKeepAlive();
+    const intervalId = window.setInterval(sendKeepAlive, 60_000);
+    return () => window.clearInterval(intervalId);
+  }, [convex, engineId, humanPlayerId, sendWorldInput]);
 
   if (!worldId || !engineId || !game) {
     return null;
@@ -132,6 +171,7 @@ https://github.com/michalochman/react-pixi-fiber/issues/145#issuecomment-5315492
             scenarioRuntime={scenarioRuntime}
             focusedActivityId={focusedActivityId}
             onFocusActivity={setFocusedActivityId}
+            onSelectPlayer={(playerId) => setSelectedElement({ kind: 'player', id: playerId })}
           />
           <PlayerDetails
             worldId={worldId}

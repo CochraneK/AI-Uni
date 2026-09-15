@@ -47,6 +47,9 @@ export default function PlayerDetails({
   );
 
   const playerDescription = playerId && game.playerDescriptions.get(playerId);
+  const visiblePlayerDescription = playerDescription?.description
+    .replace(/^[\s\S]*?(?=[\u4e00-\u9fff])/, '')
+    .trim() || playerDescription?.description;
 
   const startConversation = useSendInput(engineId, 'startConversation');
   const acceptInvite = useSendInput(engineId, 'acceptInvite');
@@ -161,6 +164,15 @@ export default function PlayerDetails({
           </div>
         </a>
       )}
+      {!isMe && !canInvite && !sameConversation && (
+        <div className="mt-6 rounded border border-brown-600 bg-brown-800 px-3 py-2 text-sm leading-6 text-brown-200">
+          {playerConversation
+            ? '这位同学正在和别人交流，等一会儿再试试。'
+            : humanConversation
+              ? '你正在进行另一段对话，结束后才能和这位同学交流。'
+              : '这位同学暂时没有回应，稍后可以再试。'}
+        </div>
+      )}
       {waitingForAccept && (
         <a className="mt-6 button text-white shadow-solid text-xl cursor-pointer pointer-events-auto opacity-50">
           <div className="h-full bg-clay-700 text-center">
@@ -223,7 +235,7 @@ export default function PlayerDetails({
       )}
       <div className="desc my-6">
         <p className="leading-tight -m-4 bg-brown-700 text-base sm:text-sm">
-          {!isMe && playerDescription?.description}
+          {!isMe && visiblePlayerDescription}
           {isMe && <i>这是你。</i>}
           {!isMe && inConversationWithMe && (
             <>

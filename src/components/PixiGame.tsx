@@ -118,7 +118,6 @@ export const PixiGame = (props: {
   // Zoom on the user’s avatar when it is created.
   useEffect(() => {
     focusHumanPlayer();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.humanPlayerId]);
 
   // Explicit "locate me" requests from the normal DOM UI. Keeping this as a
@@ -127,7 +126,6 @@ export const PixiGame = (props: {
   useEffect(() => {
     if (!props.focusMeRequestId) return;
     focusHumanPlayer();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.focusMeRequestId]);
 
   // Fixed commitments and future calendar items can ask the map to navigate to a
@@ -142,7 +140,6 @@ export const PixiGame = (props: {
     void navigateTo(anchor);
     // requestId is intentionally the trigger; repeated requests to the same
     // location should still be able to issue a fresh move command.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.navigationRequest?.requestId]);
 
   return (

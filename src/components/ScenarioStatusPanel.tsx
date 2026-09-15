@@ -25,13 +25,14 @@ export default function ScenarioStatusPanel(props: {
   scenarioRuntime: ScenarioRuntimeView;
   focusedActivityId?: string;
   onFocusActivity?: (activityId?: string) => void;
+  onSelectPlayer?: (playerId: GameId<'players'>) => void;
 }) {
   const [dayEndMessage, setDayEndMessage] = useState<string>();
   const [activityMessage, setActivityMessage] = useState<string>();
   const [scenarioMessage, setScenarioMessage] = useState<string>();
   const [runningActivityId, setRunningActivityId] = useState<string>();
   const [completingScenario, setCompletingScenario] = useState(false);
-  const { runtime, locationId, activeScenario, universityProfile, profile } =
+  const { runtime, activeRun, locationId, activeScenario, universityProfile, profile } =
     props.scenarioRuntime;
 
   const completeActiveScenario = useMutation(api.scenarios.runtime.completeActiveScenario);
@@ -107,6 +108,9 @@ export default function ScenarioStatusPanel(props: {
     activeScenario && dayClock && activeScenarioFitsToday
       ? formatGameMinute(dayClock.minute + activeScenario.estimatedMinutes)
       : undefined;
+  const primaryScenarioNpcId = activeRun?.npcAssignments?.[0]?.playerId as
+    | GameId<'players'>
+    | undefined;
 
   if (!props.humanPlayerId) {
     return null;
@@ -206,6 +210,14 @@ export default function ScenarioStatusPanel(props: {
           <p className="mt-2 text-xs leading-5 text-brown-400">
             和事件相关的人自然交谈会推进事件；也可以在你认为事情已经处理完时手动结束。事件完成后才会一次性推进游戏时间。
           </p>
+          {primaryScenarioNpcId && (
+            <button
+              className="mt-3 mr-2 rounded bg-brown-100 px-3 py-2 text-sm font-semibold text-brown-900 hover:bg-brown-200"
+              onClick={() => props.onSelectPlayer?.(primaryScenarioNpcId)}
+            >
+              和相关同学交流
+            </button>
+          )}
           {!activeScenarioFitsToday && (
             <p className="mt-2 text-xs leading-5 text-brown-300">
               这是旧存档中已开始的事件，当前剩余时间不足以正常结算；可以结束今天来中止事件。

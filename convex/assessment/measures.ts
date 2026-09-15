@@ -7,7 +7,7 @@ export type MeasureId =
   | 'custom';
 
 export type AssessmentMeasureDefinition = {
-  id: MeasureId | string;
+  id: MeasureId;
   name: string;
   purpose: 'calibration' | 'criterion' | 'research_only';
   constructs: ConstructId[];

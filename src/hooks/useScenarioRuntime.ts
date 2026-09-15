@@ -38,6 +38,10 @@ export function useScenarioRuntime(args: {
     api.scenarios.runtime.getScenarioRuntime,
     profile ? { profileId: profile._id } : 'skip',
   );
+  const scenarioRuns = useQuery(
+    api.scenarios.runtime.listScenarioRuns,
+    runtime ? { runtimeId: runtime._id } : 'skip',
+  );
   const [lastTravel, setLastTravel] = useState<CampusTravelFeedback>();
 
   const creatingProfile = useRef(false);
@@ -136,10 +140,18 @@ export function useScenarioRuntime(args: {
     () => (runtime?.activeScenarioId ? getScenario(runtime.activeScenarioId) : undefined),
     [runtime?.activeScenarioId],
   );
+  const activeRun = useMemo(
+    () =>
+      runtime?.activeRunId && scenarioRuns
+        ? scenarioRuns.find((run) => run._id === runtime.activeRunId)
+        : undefined,
+    [runtime?.activeRunId, scenarioRuns],
+  );
 
   return {
     profile,
     runtime,
+    activeRun,
     locationId,
     activeScenario,
     universityProfile,

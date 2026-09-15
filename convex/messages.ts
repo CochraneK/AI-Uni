@@ -5,6 +5,12 @@ import { conversationId, playerId } from './aiTown/ids';
 import { recordFirstWeekNpcInteractionForHumanToken } from './life/firstWeekProgress';
 import { recordScenarioDialogueProgress } from './scenarios/progress';
 import { writeTelemetryForHumanToken } from './research/telemetry';
+import {
+  authorizeControlledPlayer,
+  authorizeConversationMembership,
+  localActorToken,
+} from './aiTown/publicInputAuthorization';
+import { DEFAULT_NAME } from './constants';
 
 export const listMessages = query({
   args: {
@@ -40,6 +46,25 @@ export const writeMessage = mutation({
     text: v.string(),
   },
   handler: async (ctx, args) => {
+    const world = await ctx.db.get(args.worldId);
+    if (!world) {
+      throw new Error(`Invalid world ID: ${args.worldId}`);
+    }
+    const identity = await ctx.auth.getUserIdentity();
+    authorizeControlledPlayer({
+      world,
+      playerId: args.playerId,
+      actorTokenIdentifier: localActorToken({
+        identityTokenIdentifier: identity?.tokenIdentifier ?? null,
+        fallbackTokenIdentifier: DEFAULT_NAME,
+      }),
+    });
+    authorizeConversationMembership({
+      world,
+      playerId: args.playerId,
+      conversationId: args.conversationId,
+    });
+
     await ctx.db.insert('messages', {
       conversationId: args.conversationId,
       author: args.playerId,
@@ -48,7 +73,6 @@ export const writeMessage = mutation({
       worldId: args.worldId,
     });
 
-    const world = await ctx.db.get(args.worldId);
     const author = world?.players.find((player) => player.id === args.playerId);
     if (author?.human) {
       const conversation = world?.conversations.find(
