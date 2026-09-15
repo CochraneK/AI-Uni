@@ -1,0 +1,348 @@
+# P003 Extensible Lifespan Architecture
+
+> Core rule: P003 is not a finite branching script. It is a continuously extensible life-simulation engine whose content can grow without rewriting the core.
+
+## 1. Product invariant
+
+P003 should remain expandable across:
+- life stages and historical cohorts;
+- regions and opportunity structures;
+- family forms and recurring relationships;
+- education, work, intimacy, health, money and community routes;
+- text, Galgame and later pixel-world presentation modes;
+- player-facing reflection and research-only behavioral evidence.
+
+The content architecture therefore uses **Storylets + Content Packs**, not one giant branching tree.
+
+## 2. MECE content ontology
+
+Every Storylet is classified on independent axes. These axes answer different questions and must not be collapsed into one taxonomy.
+
+### Axis A — Life stage: when?
+
+P003 uses non-overlapping age bands for coverage auditing:
+1. origin (0–1)
+2. early childhood (2–5)
+3. middle childhood (6–11)
+4. adolescence (12–17)
+5. emerging adulthood (18–24)
+6. early adulthood (25–39)
+7. middle adulthood (40–59)
+8. later adulthood (60–74)
+9. late life (75–100)
+
+Game chapters may overlap for dramatic pacing, but the coverage ontology does not.
+
+### Axis B — Life domain: what part of life?
+
+Exactly one primary domain:
+1. body & health
+2. self & identity
+3. family & kinship
+4. friendship & social network
+5. intimacy
+6. education & learning
+7. work & career
+8. money, housing & material life
+9. community, institutions & society
+10. meaning, creation & contribution
+
+A Storylet can have cross-domain effects, but those are tags. They do not create competing primary classifications.
+
+### Axis C — Actor: with whom?
+
+Actors are persistent people, not disposable prompt props:
+- caregiver / parent / grandparent / sibling;
+- peer / friend / close friend;
+- romantic partner / spouse / child;
+- teacher / mentor;
+- coworker / manager;
+- community ties.
+
+### Axis D — Structural context: under what conditions?
+
+Context is modeled separately from personality:
+- household material security;
+- caregiving stability;
+- learning access;
+- neighborhood opportunity;
+- institutions and services;
+- historical cohort and calendar period;
+- accumulated role constraints and opportunities.
+
+### Axis E — Narrative function: why is this scene here?
+
+Each Storylet has one primary dramatic function:
+- establish world;
+- reveal character;
+- test value;
+- relationship move;
+- opportunity;
+- pressure;
+- reversal;
+- loss;
+- commitment;
+- repair;
+- payoff;
+- reflection.
+
+Narrative techniques such as callback, foreshadowing, escalation and delayed consequence are separate tags.
+
+### Axis F — Psychology: what evidence may this generate?
+
+Psychological interpretation is downstream of gameplay. It never defines whether an event is allowed to happen.
+
+### Axis G — Consequence: what changes?
+
+A choice may modify:
+- immediate situation meters;
+- persistent relationship state;
+- world/history flags;
+- delayed hooks;
+- memories and callback keys;
+- future Storylet eligibility;
+- research evidence.
+
+## 3. Storylet model
+
+A Storylet is an independent narrative unit with:
+
+```text
+id
+packId
+version
+active
+title / setup / visibleQuestion
+primaryDomain
+lifeStageBands
+narrativeFunction
+techniques
+prerequisites
+castSlots
+choices
+  immediate effects
+  history flags
+  delayed hooks
+  analysis signal ids
+designNote
+```
+
+The scheduler selects eligible Storylets using age, season, history, origin context, relationship availability and prior play history. It prefers novel domains and unplayed material rather than forcing a single tree.
+
+This makes expansion additive:
+- add a profession pack;
+- add a sibling pack;
+- add a 1990s China cohort pack;
+- add an LGBTQ+ relationship pack;
+- add caregiving or retirement content;
+without changing the core scheduler.
+
+Duplicate Storylet ids are rejected.
+
+## 4. Content-pack contract
+
+A content pack is versioned and independently registerable.
+
+Examples:
+
+```text
+p003-core-foundation
+china-school-2000s
+china-housing-2010s
+health-chronic-condition
+career-academia
+career-service-work
+family-siblings
+intimacy-long-distance
+later-life-widowhood
+```
+
+A new pack should add missing coverage before adding more material to already-dense cells.
+
+## 5. Coverage matrix
+
+P003 audits content using:
+
+**life stage × life domain**
+
+Every matrix cell tracks:
+- Storylet count;
+- callback/delayed-consequence count;
+- narrative-function diversity;
+- psychological-construct coverage.
+
+This prevents accidental content bias such as:
+- adulthood becoming only career + marriage;
+- old age becoming only illness + retirement;
+- adolescence becoming only exams;
+- childhood becoming only family;
+- friendship disappearing after university.
+
+The coverage matrix is allowed to contain empty cells during development. Empty cells are explicit backlog, not hidden gaps.
+
+## 6. Character model
+
+Recurring characters use dramatic-writing dimensions rather than one-word archetypes:
+
+- social role;
+- visible Want;
+- underlying Need;
+- Fear / Avoidance;
+- values;
+- contradictions;
+- resources;
+- constraints;
+- private facts;
+- open arc threads;
+- shared history with the player.
+
+Example contradiction:
+
+```text
+A parent deeply values care
+AND
+under pressure tries to make decisions for the child.
+```
+
+This is more reusable than labeling the NPC “controlling”.
+
+NPCs have their own life course. Parents age, friends move, partners change work, siblings form families, coworkers leave organizations. This operationalizes **linked lives** rather than treating NPCs as static test stimuli.
+
+## 7. Relationship memory
+
+Each recurring relationship stores:
+- trust;
+- closeness;
+- reciprocity;
+- reliability;
+- conflict repair;
+- comfort with dependence;
+- fear of rejection;
+- reassurance seeking;
+- withdrawal;
+- boundary clarity;
+- concrete shared memories;
+- unresolved issues;
+- callback keys.
+
+Attachment-like evidence is relationship-specific. P003 must not assign one permanent global attachment label from a few scenes.
+
+## 8. ai-uni psychology absorption
+
+P003 now imports the complete construct registry from `convex/assessment/constructs.ts` into an explicit policy layer.
+
+### Player-facing profile
+- Big Five behavioral tendencies.
+
+### Player-facing reflection
+- rejection sensitivity;
+- trust;
+- support seeking;
+- coping;
+- emotion regulation / reappraisal / suppression;
+- relationship-specific attachment evidence;
+- risk taking;
+- delay discounting.
+
+### Research-only
+- CAPE-P15-associated exploratory signals;
+- PCL-5-associated exploratory signals.
+
+Research-only constructs:
+- are not player-visible;
+- are not converted into clinical scores;
+- require repeated evidence across contexts;
+- require independent criterion measures under an explicit study design.
+
+P003 therefore **absorbs** these constructs without turning the game into a covert diagnostic instrument.
+
+## 9. Trait × Situation × Life Stage
+
+The first Text Edition report used weighted sums. P003 now adds a second layer that asks:
+
+- Does a pattern repeat across different life domains?
+- Does it repeat across different life stages?
+- Is the direction consistent?
+- Does it become stronger, weaker or remain similar after adulthood?
+
+Outputs distinguish:
+- cross-context pattern;
+- context-sensitive response;
+- emerging pattern;
+- insufficient evidence.
+
+This is intentionally more conservative than “choice X means trait Y”.
+
+## 10. Developmental and narrative foundations
+
+The architecture is informed by several different traditions, each used only for the problem it is good at:
+
+### Lifespan / personality science
+- Erikson-inspired developmental themes — chapter prompts, never maturity scores.
+- Life-course theory — timing, linked lives, turning points, path dependence and cumulative opportunity.
+- Bronfenbrenner — structural/ecological context.
+- Attachment — relationship-specific trust/proximity/repair.
+- Self-determination theory — autonomy, competence and relatedness.
+- Social convoy — changing support networks.
+- Socioemotional selectivity — later-life goal reprioritization.
+- Selection–Optimization–Compensation — adaptation to changing resources.
+- Narrative identity — callbacks, autobiographical coherence and life review.
+- Person × Situation research — separate stable tendency from situational expression.
+- Life-event/personality-change research — life transitions may matter, but average effects are often modest and heterogeneous.
+
+### Dramatic writing / character design
+Used as craft tools, not psychometrics:
+- Goal → Obstacle → Choice → Consequence;
+- Want / Need / Fear / Contradiction;
+- setup / escalation / reversal / payoff;
+- open loops and delayed callbacks;
+- character arcs that can resolve, fail, reopen or change direction.
+
+### Interactive narrative
+P003 follows Storylet / quality-based narrative principles: small conditional narrative units selected by world state are more extensible than a combinatorial branch tree.
+
+## 11. Presentation separation
+
+The life engine must remain independent from presentation.
+
+```text
+life engine
+  ├─ ontology
+  ├─ storylets
+  ├─ characters
+  ├─ relationships
+  ├─ scheduler
+  ├─ psychology evidence
+  ├─ coverage audit
+  └─ report
+       ↓
+presentation
+  ├─ Text Edition
+  ├─ Galgame Edition
+  └─ Pixel World
+```
+
+Galgame and Pixel modes should render the same Storylets and state rather than fork the life logic.
+
+## 12. Source anchors
+
+Research anchors used to constrain design:
+- McAdams, D. P. (2001). *The Psychology of Life Stories*. Review of General Psychology. DOI: 10.1037/1089-2680.5.2.100.
+- Sherman, R. A., Rauthmann, J. F., Brown, N. A., Serfass, D. G., & Jones, A. B. (2015). *The independent effects of personality and situations on real-time expressions of behavior and emotion*. Journal of Personality and Social Psychology. DOI: 10.1037/pspp0000036.
+- Bühler, J. L., Orth, U., Bleidorn, W., et al. (2023). *Life Events and Personality Change: A Systematic Review and Meta-Analysis*. European Journal of Personality. DOI: 10.1177/08902070231190219.
+- Existing ai-uni theory catalog in `convex/life/theories.ts`.
+- Emily Short, “Storylets: You Want Them” (interactive narrative design).
+- Failbetter Games production writing on quality-based narrative and parsimony.
+
+## 13. Non-negotiable boundaries
+
+1. No final “successful life” score.
+2. No single choice becomes a personality label.
+3. Structural disadvantage is never rewritten as personality weakness.
+4. Childhood shifts probabilities; it does not determine adulthood.
+5. Relationship patterns remain relationship-specific where appropriate.
+6. Clinical/research-only constructs never become automatic diagnoses.
+7. New content should be additive and versioned.
+8. Every major choice should leave history that can matter later.
+9. NPCs should have lives independent of the player.
+10. The world should remember the player.
