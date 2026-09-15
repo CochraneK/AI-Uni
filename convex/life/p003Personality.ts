@@ -27,6 +27,7 @@ export type P003DecisionRecord = {
 
 export type P003PersonalityEvidence = P003DecisionRecord & {
   signal: number;
+  weight: number;
   interpretation: string;
 };
 
@@ -51,6 +52,13 @@ export type P003PersonalityReport = {
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
+
+export const evidenceWeightForAge = (age: number) => {
+  if (age < 6) return 0.35;
+  if (age < 12) return 0.55;
+  if (age < 18) return 0.75;
+  return 1;
+};
 
 export const p003PersonalityDimensions: Record<
   P003PersonalityDimensionId,
@@ -404,19 +412,21 @@ export const buildP003PersonalityReport = (
         evidence.push({
           ...decision,
           signal: value,
+          weight: evidenceWeightForAge(decision.age),
           interpretation: signal.interpretation,
         });
       }
 
+      const totalWeight = evidence.reduce((sum, item) => sum + item.weight, 0);
       const average =
-        evidence.length === 0
+        totalWeight === 0
           ? 0
-          : evidence.reduce((sum, item) => sum + item.signal, 0) / evidence.length;
+          : evidence.reduce((sum, item) => sum + item.signal * item.weight, 0) / totalWeight;
       // Keep game-derived scores deliberately conservative. Even perfectly
       // consistent choices do not produce extreme 0/100 psychometric claims.
       const score = Math.round(clamp(50 + average * 28, 22, 78));
       const band = bandForScore(score);
-      const confidence = Number(clamp(0.2 + evidence.length * 0.13, 0.2, 0.92).toFixed(2));
+      const confidence = Number(clamp(0.2 + totalWeight * 0.13, 0.2, 0.92).toFixed(2));
 
       return {
         id,
