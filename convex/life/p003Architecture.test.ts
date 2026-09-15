@@ -24,6 +24,10 @@ import {
 } from './p003Storylets';
 import { buildP003RunPlan } from './p003RunPlan';
 import { instantiateP003NarrativeKernel } from './p003Archetypes';
+import {
+  buildP003ArchetypeCoverage,
+  validateP003ArchetypeGrid,
+} from './p003ArchetypeCoverage';
 import { auditP003CatalogConstraints } from './p003Constraints';
 import {
   p003DefaultPopulationPriors,
@@ -61,6 +65,25 @@ describe('P003 extensible architecture', () => {
     expect(a.compensatoryStrategy).toBeTruthy();
     expect(a.developmentalNeed).toBeTruthy();
     expect(a.source).toBe('p003_archetype_grid');
+  });
+
+  test('deep archetype grid is auditable and covers every current recurring runtime role', () => {
+    expect(validateP003ArchetypeGrid()).toEqual([]);
+    const coverage = buildP003ArchetypeCoverage();
+    const currentRuntimeRoles = ['parent', 'friend', 'teacher', 'coworker', 'manager'];
+    for (const role of currentRuntimeRoles) {
+      const row = coverage.find((item) => item.role === role);
+      expect(row).toBeDefined();
+      expect(row?.archetypeCount).toBeGreaterThanOrEqual(2);
+      expect(row?.status).not.toBe('missing');
+    }
+  });
+
+  test('current Storylet catalog uses a diverse set of pressure shapes', () => {
+    const shapes = new Set(
+      p003StarterStorylets.flatMap((storylet) => storylet.pressureShapes),
+    );
+    expect(shapes.size).toBeGreaterThanOrEqual(10);
   });
 
   test('current Storylet catalog passes hard cross-constraint checks', () => {
