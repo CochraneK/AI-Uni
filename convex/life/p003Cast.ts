@@ -1,6 +1,7 @@
 import type { LifeOriginSnapshot, RelationshipType } from './types';
 import type { P003CharacterBlueprint } from './p003Characters';
 import type { P003Storylet } from './p003Storylets';
+import { enrichCharacterWithNarrativeKernel } from './p003Archetypes';
 
 const names = ['林然', '周宁', '陈安', '许澄', '王禾', '赵青', '沈知', '李言', '苏遥', '唐予'];
 
@@ -208,7 +209,22 @@ export const generateP003CoreCast = (
     );
   }
 
-  return cast;
+  return cast.map((character) => {
+    const enrichment = enrichCharacterWithNarrativeKernel(character, seed);
+    return {
+      ...character,
+      values: enrichment.values,
+      narrativeKernel: enrichment.narrativeKernel,
+      arcThreads: [
+        ...character.arcThreads,
+        {
+          id: `archetype:${enrichment.narrativeKernel.archetypeKey}`,
+          question: enrichment.narrativeKernel.arcQuestion,
+          status: 'latent' as const,
+        },
+      ],
+    };
+  });
 };
 
 export const characterAgeAtPlayerAge = (
