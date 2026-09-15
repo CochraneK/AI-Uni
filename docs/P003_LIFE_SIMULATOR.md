@@ -417,3 +417,16 @@ npm run dev:p003
 ```
 
 文字版当前使用 localStorage 保存单次人生进度，因此即使没有 Convex 配置也可独立运行。后续接入统一用户身份与管理员数据面板时，再把同一套决策记录同步到后端，不改变游戏核心逻辑。
+
+
+## Extensible architecture
+
+The long-term P003 architecture is specified in [P003_EXTENSIBLE_ARCHITECTURE.md](./P003_EXTENSIBLE_ARCHITECTURE.md).
+
+Key invariants:
+- MECE life-stage × life-domain ontology;
+- Storylet/content-pack expansion instead of a combinatorial branch tree;
+- persistent recurring characters and relationship memory;
+- full ai-uni psychology registry absorption with player-facing vs research-only boundaries;
+- coverage-driven content growth;
+- Text → Galgame → Pixel as presentation layers over the same life engine.
