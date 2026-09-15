@@ -12,8 +12,11 @@ const clamp01 = (value: number) => Math.max(0, Math.min(1, value));
 const scaled = (seed: string, key: string, min: number, max: number) =>
   min + seededUnitInterval(`${seed}:${key}`) * (max - min);
 
-const weightedPick = <T>(seed: string, key: string, options: Array<{ value: T; weight: number }>) =>
-  selectWeightedLifeOption(options, `${seed}:${key}`) ?? options[0]?.value;
+const weightedPick = <T>(
+  seed: string,
+  key: string,
+  options: [{ value: T; weight: number }, ...Array<{ value: T; weight: number }>],
+): T => selectWeightedLifeOption(options, `${seed}:${key}`) ?? options[0].value;
 
 export const generateLifeOrigin = (seed: string, birthYear = 2000): LifeOriginSnapshot => {
   const regionType = weightedPick<LifeOriginRegionType>(seed, 'region', [
