@@ -23,6 +23,12 @@ import {
   type P003ContentPack,
 } from './p003Storylets';
 import { buildP003RunPlan } from './p003RunPlan';
+import { instantiateP003NarrativeKernel } from './p003Archetypes';
+import { auditP003CatalogConstraints } from './p003Constraints';
+import {
+  p003DefaultPopulationPriors,
+  validateP003PopulationPriors,
+} from './p003PopulationPriors';
 
 describe('P003 extensible architecture', () => {
   test('absorbs every ai-uni psychology construct into an explicit policy', () => {
@@ -44,6 +50,28 @@ describe('P003 extensible architecture', () => {
     expect(coverage).toHaveLength(Object.keys(constructRegistry).length);
     const researchOnly = coverage.filter((row) => row.surface === 'research_only');
     expect(researchOnly.every((row) => row.status === 'research_only_no_content' || row.status === 'thin')).toBe(true);
+  });
+
+  test('adapts AI-persona archetype-grid thinking into deterministic non-clinical NPC kernels', () => {
+    const a = instantiateP003NarrativeKernel('npc-seed', 'friend');
+    const b = instantiateP003NarrativeKernel('npc-seed', 'friend');
+    expect(a).toEqual(b);
+    expect(a.archetypeKey).toBeTruthy();
+    expect(a.formativePressure).toBeTruthy();
+    expect(a.compensatoryStrategy).toBeTruthy();
+    expect(a.developmentalNeed).toBeTruthy();
+    expect(a.source).toBe('p003_archetype_grid');
+  });
+
+  test('current Storylet catalog passes hard cross-constraint checks', () => {
+    const issues = auditP003CatalogConstraints(p003StarterStorylets);
+    expect(issues.filter((issue) => issue.severity === 'error')).toEqual([]);
+  });
+
+  test('population priors are versioned, sourced and explicitly non-representative by default', () => {
+    expect(validateP003PopulationPriors(p003DefaultPopulationPriors)).toEqual([]);
+    expect(p003DefaultPopulationPriors.representativeClaim).toBe(false);
+    expect(p003DefaultPopulationPriors.sourceNote.length).toBeGreaterThan(20);
   });
 
   test('maps every current authored event into exactly one primary domain and narrative function', () => {
@@ -136,6 +164,7 @@ describe('P003 extensible architecture', () => {
             stage: 'adulthood',
             name_cn: '第一次正式工作',
             valence: 'neutral',
+            event_type: 'entrapment',
           },
         ],
       },
@@ -146,12 +175,16 @@ describe('P003 extensible architecture', () => {
     expect(kernel.health?.primaryConditionId).toBe('重度抑郁障碍');
     expect(kernel.health?.visibility).toBe('private_runtime');
     expect(kernel.priorLifeEvents?.[0]?.p003PrimaryDomain).toBe('work_career');
+    expect(kernel.priorLifeEvents?.[0]?.pressureShapes).toEqual(['entrapment']);
 
     const character = characterBlueprintFromPersonaKernel(kernel, 'coworker');
     expect(character.displayName).toBe('测试人物');
     expect(character.visibleWant).toBe('证明自己值得被需要');
     expect(character.privateFacts[0]).toContain('health-layer:');
     expect(character.displayName).not.toContain('抑郁');
+    expect(character.narrativeKernel?.archetypeKey).toBe('hidden_sufferer');
+    expect(character.narrativeKernel?.formativePressure).toBe('长期忽视自己的需要');
+    expect(character.narrativeKernel?.source).toBe('external_persona');
   });
 
   test('linked-life cast is deterministic and ages alongside the player', () => {
@@ -159,6 +192,7 @@ describe('P003 extensible architecture', () => {
     const castA = generateP003CoreCast('cast-seed', origin);
     const castB = generateP003CoreCast('cast-seed', origin);
     expect(castA).toEqual(castB);
+    expect(castA.every((character) => character.narrativeKernel)).toBe(true);
     const caregiver = castA.find((character) => character.id === 'primary-caregiver');
     expect(caregiver).toBeDefined();
     const ageAt5 = caregiver
