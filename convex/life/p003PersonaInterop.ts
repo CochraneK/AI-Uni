@@ -9,6 +9,7 @@ import type {
 } from './p003Ontology';
 import type { RelationshipType } from './types';
 import type { P003PressureShapeId } from './p003PressureShapes';
+import { surfaceProfileFromExternalPersona } from './p003SurfaceProfiles';
 
 export type P003PersonaSchemaVersion = 'persona-kernel.v1';
 
@@ -331,6 +332,7 @@ export const characterBlueprintFromPersonaKernel = (
         status: 'latent',
       }]
     : [],
+  surfaceProfile: surfaceProfileFromExternalPersona(kernel),
   narrativeKernel:
     kernel.archetype?.key ||
     kernel.psychology.formativeWound ||
