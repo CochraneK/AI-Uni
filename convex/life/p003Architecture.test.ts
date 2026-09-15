@@ -13,6 +13,7 @@ import {
   selectP003Storylets,
   type P003ContentPack,
 } from './p003Storylets';
+import { buildP003RunPlan } from './p003RunPlan';
 
 describe('P003 extensible architecture', () => {
   test('absorbs every ai-uni psychology construct into an explicit policy', () => {
@@ -68,6 +69,15 @@ describe('P003 extensible architecture', () => {
     };
     const expanded = registerP003ContentPack(p003StarterStorylets, demoPack);
     expect(expanded).toHaveLength(p003StarterStorylets.length + 1);
+  });
+
+  test('run plan samples the catalog deterministically without duplicate storylets', () => {
+    const a = buildP003RunPlan('same-seed', p003StarterStorylets);
+    const b = buildP003RunPlan('same-seed', p003StarterStorylets);
+    expect(a).toEqual(b);
+    expect(new Set(a.map((item) => item.storyletId)).size).toBe(a.length);
+    expect(a.length).toBeLessThanOrEqual(p003StarterStorylets.length);
+    expect(a.every((item, index) => index === 0 || item.age >= a[index - 1].age)).toBe(true);
   });
 
   test('scheduler filters by age/season while preferring fresh domains', () => {
