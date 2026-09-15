@@ -86,6 +86,11 @@ export type P003ExternalPersonaKernel = {
   psychology: P003PersonaPsychology;
   health?: P003PersonaHealthLayer;
   priorLifeEvents?: P003PersonaLifeEventSeed[];
+  privateNarrative?: {
+    sensitivities?: string[];
+    selfProtectivePatterns?: string[];
+    hiddenExperiences?: string[];
+  };
   generationMetadata?: {
     seed?: string | number;
     cohort?: string;
@@ -127,6 +132,9 @@ export type AIPersonaExportV12 = {
   arc_type?: string;
   arc_description?: string;
   life_events?: Array<Record<string, unknown>>;
+  triggers?: string[];
+  safety_behaviors?: string[];
+  hidden_experiences?: string[];
 };
 
 const aiPersonaDomainMap: Record<string, P003LifeDomainId> = {
@@ -224,6 +232,11 @@ export const adaptAIPersonaV12ToP003Kernel = (
       primaryConditionId: persona.primary_diagnosis,
       comorbidConditionIds: persona.comorbidities ?? [],
       visibility: 'private_runtime',
+    },
+    privateNarrative: {
+      sensitivities: persona.triggers ?? [],
+      selfProtectivePatterns: persona.safety_behaviors ?? [],
+      hiddenExperiences: persona.hidden_experiences ?? [],
     },
     priorLifeEvents: (persona.life_events ?? []).flatMap((event, index) => {
       const title =
@@ -325,6 +338,16 @@ export const characterBlueprintFromPersonaKernel = (
   privateFacts: kernel.health?.primaryConditionId
     ? [`health-layer:${kernel.health.primaryConditionId}`]
     : [],
+  sensitivities: kernel.privateNarrative?.sensitivities ?? [],
+  selfProtectivePatterns: kernel.privateNarrative?.selfProtectivePatterns ?? [],
+  hiddenHistory: (kernel.privateNarrative?.hiddenExperiences ?? []).map(
+    (summary, index) => ({
+      id: `external-hidden:${kernel.sourcePersonaId}:${index}`,
+      summary,
+      state: 'private' as const,
+      revealKeys: [`character:persona:${kernel.sourceSystem}:${kernel.sourcePersonaId}:trust`],
+    }),
+  ),
   arcThreads: kernel.psychology.arcDescription
     ? [{
         id: `imported-arc:${kernel.sourcePersonaId}`,
