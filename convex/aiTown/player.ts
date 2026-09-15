@@ -307,4 +307,16 @@ export const playerInputs = {
       return null;
     },
   }),
+  keepAlive: inputHandler({
+    args: { playerId },
+    handler: (game, now, args) => {
+      const playerId = parseGameId('players', args.playerId);
+      const player = game.world.players.get(playerId);
+      if (!player) {
+        throw new Error(`Invalid player ID ${playerId}`);
+      }
+      player.lastInput = now;
+      return null;
+    },
+  }),
 };

@@ -192,11 +192,17 @@ export class Conversation {
 
   stop(game: Game, now: number) {
     delete this.isTyping;
-    for (const [playerId, member] of this.participants.entries()) {
+    for (const [playerId] of this.participants.entries()) {
       const agent = [...game.world.agents.values()].find((a) => a.playerId === playerId);
       if (agent) {
         agent.lastConversation = now;
-        agent.toRemember = this.id;
+        // A rejected/aborted invite can be created and deleted within one engine
+        // step and therefore never exist in archivedConversations. It also has no
+        // dialogue worth remembering. Only schedule memory work for conversations
+        // that actually exchanged at least one message.
+        if (this.numMessages > 0) {
+          agent.toRemember = this.id;
+        }
       }
     }
     game.world.conversations.delete(this.id);

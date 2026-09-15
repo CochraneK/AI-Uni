@@ -36,7 +36,9 @@ export default function InteractButton() {
         throw e;
       }
       try {
-        await waitForInput(convex, inputId);
+        if (inputId) {
+          await waitForInput(convex, inputId);
+        }
       } catch (e: any) {
         toast.error(e.message);
       }

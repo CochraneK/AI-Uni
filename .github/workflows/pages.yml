@@ -1,0 +1,60 @@
+name: Build AI-Uni GitHub Pages
+
+on:
+  push:
+    branches:
+      - feat/generic-university-v1
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gh-pages-preview
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build zero-setup browser demo
+        if: ${{ env.CONVEX_DEPLOY_KEY == '' }}
+        env:
+          VITE_DEMO_MODE: '1'
+        run: |
+          echo "No CONVEX_DEPLOY_KEY yet; publishing the standalone browser demo."
+          npm run build
+
+      - name: Deploy Convex and build full online AI-Uni
+        if: ${{ env.CONVEX_DEPLOY_KEY != '' }}
+        run: npx convex deploy --cmd "npm run build" --cmd-url-env-var-name VITE_CONVEX_URL
+
+      - name: Initialize production world
+        if: ${{ env.CONVEX_DEPLOY_KEY != '' }}
+        run: npx convex run init --prod
+
+      - name: Keep GitHub Pages from running Jekyll
+        run: touch dist/.nojekyll
+
+      - name: Publish gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          force_orphan: true

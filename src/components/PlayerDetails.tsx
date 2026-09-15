@@ -47,6 +47,9 @@ export default function PlayerDetails({
   );
 
   const playerDescription = playerId && game.playerDescriptions.get(playerId);
+  const visiblePlayerDescription = playerDescription?.description
+    .replace(/^[\s\S]*?(?=[\u4e00-\u9fff])/, '')
+    .trim() || playerDescription?.description;
 
   const startConversation = useSendInput(engineId, 'startConversation');
   const acceptInvite = useSendInput(engineId, 'acceptInvite');
@@ -56,7 +59,7 @@ export default function PlayerDetails({
   if (!playerId) {
     return (
       <div className="h-full text-xl flex text-center items-center p-4">
-        Click on an agent on the map to see chat history.
+        点击地图上的人物，查看资料和聊天记录。
       </div>
     );
   }
@@ -157,21 +160,30 @@ export default function PlayerDetails({
           onClick={onStartConversation}
         >
           <div className="h-full bg-clay-700 text-center">
-            <span>Start conversation</span>
+            <span>发起对话</span>
           </div>
         </a>
+      )}
+      {!isMe && !canInvite && !sameConversation && (
+        <div className="mt-6 rounded border border-brown-600 bg-brown-800 px-3 py-2 text-sm leading-6 text-brown-200">
+          {playerConversation
+            ? '这位同学正在和别人交流，等一会儿再试试。'
+            : humanConversation
+              ? '你正在进行另一段对话，结束后才能和这位同学交流。'
+              : '这位同学暂时没有回应，稍后可以再试。'}
+        </div>
       )}
       {waitingForAccept && (
         <a className="mt-6 button text-white shadow-solid text-xl cursor-pointer pointer-events-auto opacity-50">
           <div className="h-full bg-clay-700 text-center">
-            <span>Waiting for accept...</span>
+            <span>等待对方接受…</span>
           </div>
         </a>
       )}
       {waitingForNearby && (
         <a className="mt-6 button text-white shadow-solid text-xl cursor-pointer pointer-events-auto opacity-50">
           <div className="h-full bg-clay-700 text-center">
-            <span>Walking over...</span>
+            <span>正在靠近…</span>
           </div>
         </a>
       )}
@@ -184,7 +196,7 @@ export default function PlayerDetails({
           onClick={onLeaveConversation}
         >
           <div className="h-full bg-clay-700 text-center">
-            <span>Leave conversation</span>
+            <span>结束对话</span>
           </div>
         </a>
       )}
@@ -198,7 +210,7 @@ export default function PlayerDetails({
             onClick={onAcceptInvite}
           >
             <div className="h-full bg-clay-700 text-center">
-              <span>Accept</span>
+              <span>接受</span>
             </div>
           </a>
           <a
@@ -209,7 +221,7 @@ export default function PlayerDetails({
             onClick={onRejectInvite}
           >
             <div className="h-full bg-clay-700 text-center">
-              <span>Reject</span>
+              <span>拒绝</span>
             </div>
           </a>
         </>
@@ -223,12 +235,12 @@ export default function PlayerDetails({
       )}
       <div className="desc my-6">
         <p className="leading-tight -m-4 bg-brown-700 text-base sm:text-sm">
-          {!isMe && playerDescription?.description}
-          {isMe && <i>This is you!</i>}
+          {!isMe && visiblePlayerDescription}
+          {isMe && <i>这是你。</i>}
           {!isMe && inConversationWithMe && (
             <>
               <br />
-              <br />(<i>Conversing with you!</i>)
+              <br />(<i>正在和你对话</i>)
             </>
           )}
         </p>
@@ -246,7 +258,7 @@ export default function PlayerDetails({
       {!playerConversation && previousConversation && (
         <>
           <div className="box flex-grow">
-            <h2 className="bg-brown-700 text-lg text-center">Previous conversation</h2>
+            <h2 className="bg-brown-700 text-lg text-center">上次对话</h2>
           </div>
           <Messages
             worldId={worldId}

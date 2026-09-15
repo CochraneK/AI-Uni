@@ -11,6 +11,10 @@ import {
 import { playerId } from './aiTown/ids';
 import { kickEngine, startEngine, stopEngine } from './aiTown/main';
 import { engineInsertInput } from './engine/abstractGame';
+import {
+  authorizePublicWorldInput,
+  localActorToken,
+} from './aiTown/publicInputAuthorization';
 
 export const defaultWorldStatus = query({
   handler: async (ctx) => {
@@ -128,6 +132,9 @@ export const joinWorld = mutation({
     if (!world) {
       throw new ConvexError(`Invalid world ID: ${args.worldId}`);
     }
+    if (world.players.some((player) => player.human === DEFAULT_NAME)) {
+      return null;
+    }
     // const { tokenIdentifier } = identity;
     return await insertInput(ctx, world._id, 'join', {
       name,
@@ -171,10 +178,27 @@ export const sendWorldInput = mutation({
     args: v.any(),
   },
   handler: async (ctx, args) => {
-    // const identity = await ctx.auth.getUserIdentity();
-    // if (!identity) {
-    //   throw new Error(`Not logged in`);
-    // }
+    const worldStatus = await ctx.db
+      .query('worldStatus')
+      .filter((q) => q.eq(q.field('engineId'), args.engineId))
+      .first();
+    if (!worldStatus) {
+      throw new Error(`Invalid engine ID: ${args.engineId}`);
+    }
+    const world = await ctx.db.get(worldStatus.worldId);
+    if (!world) {
+      throw new Error(`Invalid world ID: ${worldStatus.worldId}`);
+    }
+    const identity = await ctx.auth.getUserIdentity();
+    authorizePublicWorldInput({
+      world,
+      actorTokenIdentifier: localActorToken({
+        identityTokenIdentifier: identity?.tokenIdentifier ?? null,
+        fallbackTokenIdentifier: DEFAULT_NAME,
+      }),
+      name: args.name,
+      args: args.args,
+    });
     return await engineInsertInput(ctx, args.engineId, args.name as any, args.args);
   },
 });

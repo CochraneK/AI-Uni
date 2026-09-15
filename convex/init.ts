@@ -1,13 +1,20 @@
 import { v } from 'convex/values';
 import { internal } from './_generated/api';
 import { DatabaseReader, MutationCtx, mutation } from './_generated/server';
-import { Descriptions } from '../data/characters';
-import * as map from '../data/gentle';
+import { npcProfiles as Descriptions } from '../data/npcProfiles';
+import * as map from '../data/genericCampus';
 import { insertInput } from './aiTown/insertInput';
 import { Id } from './_generated/dataModel';
 import { createEngine } from './aiTown/main';
 import { ENGINE_ACTION_DURATION } from './constants';
 import { detectMismatchedLLMProvider } from './util/llm';
+
+const publicAssetPath = (assetPath: string) => {
+  const [, relativeAssetPath] = assetPath.split('/assets/');
+  return relativeAssetPath ? `/ai-uni/assets/${relativeAssetPath}` : assetPath;
+};
+
+const configuredMapUrl = publicAssetPath(map.tilesetpath);
 
 const init = mutation({
   args: {
@@ -48,6 +55,16 @@ async function getOrCreateDefaultWorld(ctx: MutationCtx) {
     .unique();
   if (worldStatus) {
     const engine = (await ctx.db.get(worldStatus.engineId))!;
+    const existingMap = await ctx.db
+      .query('maps')
+      .withIndex('worldId', (q) => q.eq('worldId', worldStatus!.worldId))
+      .unique();
+    if (existingMap && existingMap.tileSetUrl !== configuredMapUrl) {
+      console.warn(
+        `Default world still uses legacy map ${existingMap.tileSetUrl}. ` +
+          `AI-Uni now seeds ${configuredMapUrl}; reseed the development world to migrate safely.`,
+      );
+    }
     return { worldStatus, engine };
   }
 
@@ -71,7 +88,7 @@ async function getOrCreateDefaultWorld(ctx: MutationCtx) {
     worldId,
     width: map.mapwidth,
     height: map.mapheight,
-    tileSetUrl: map.tilesetpath,
+    tileSetUrl: configuredMapUrl,
     tileSetDimX: map.tilesetpxw,
     tileSetDimY: map.tilesetpxh,
     tileDim: map.tiledim,

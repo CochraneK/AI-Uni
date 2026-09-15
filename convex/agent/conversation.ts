@@ -7,6 +7,12 @@ import { api, internal } from '../_generated/api';
 import * as embeddingsCache from './embeddingsCache';
 import { GameId, conversationId, playerId } from '../aiTown/ids';
 import { NUM_MEMORIES_TO_SEARCH } from '../constants';
+import { getScenario } from '../scenarios/registry';
+import {
+  buildScenarioNpcContext,
+  scenarioNpcPrompt,
+  type ScenarioNpcContext,
+} from '../scenarios/npcContext';
 
 const selfInternal = internal.agent.conversation;
 
@@ -17,15 +23,13 @@ export async function startConversationMessage(
   playerId: GameId<'players'>,
   otherPlayerId: GameId<'players'>,
 ): Promise<string> {
-  const { player, otherPlayer, agent, otherAgent, lastConversation } = await ctx.runQuery(
-    selfInternal.queryPromptData,
-    {
+  const { player, otherPlayer, agent, otherAgent, lastConversation, scenarioContext } =
+    await ctx.runQuery(selfInternal.queryPromptData, {
       worldId,
       playerId,
       otherPlayerId,
       conversationId,
-    },
-  );
+    });
   const embedding = await embeddingsCache.fetch(
     ctx,
     `${player.name} is talking to ${otherPlayer.name}`,
@@ -44,7 +48,7 @@ export async function startConversationMessage(
   const prompt = [
     `You are ${player.name}, and you just started a conversation with ${otherPlayer.name}.`,
   ];
-  prompt.push(...agentPrompts(otherPlayer, agent, otherAgent ?? null));
+  prompt.push(...agentPrompts(otherPlayer, agent, otherAgent ?? null, scenarioContext));
   prompt.push(...previousConversationPrompt(otherPlayer, lastConversation));
   prompt.push(...untrustedMemoryInstructions(memories));
   if (memoryWithOtherPlayer) {
@@ -84,15 +88,13 @@ export async function continueConversationMessage(
   playerId: GameId<'players'>,
   otherPlayerId: GameId<'players'>,
 ): Promise<string> {
-  const { player, otherPlayer, conversation, agent, otherAgent } = await ctx.runQuery(
-    selfInternal.queryPromptData,
-    {
+  const { player, otherPlayer, conversation, agent, otherAgent, scenarioContext } =
+    await ctx.runQuery(selfInternal.queryPromptData, {
       worldId,
       playerId,
       otherPlayerId,
       conversationId,
-    },
-  );
+    });
   const now = Date.now();
   const started = new Date(conversation.created);
   const embedding = await embeddingsCache.fetch(
@@ -104,7 +106,7 @@ export async function continueConversationMessage(
     `You are ${player.name}, and you're currently in a conversation with ${otherPlayer.name}.`,
     `The conversation started at ${started.toLocaleString()}. It's now ${now.toLocaleString()}.`,
   ];
-  prompt.push(...agentPrompts(otherPlayer, agent, otherAgent ?? null));
+  prompt.push(...agentPrompts(otherPlayer, agent, otherAgent ?? null, scenarioContext));
   prompt.push(...untrustedMemoryInstructions(memories));
   prompt.push(
     `Below is the current chat history between you and ${otherPlayer.name}.`,
@@ -143,20 +145,18 @@ export async function leaveConversationMessage(
   playerId: GameId<'players'>,
   otherPlayerId: GameId<'players'>,
 ): Promise<string> {
-  const { player, otherPlayer, conversation, agent, otherAgent } = await ctx.runQuery(
-    selfInternal.queryPromptData,
-    {
+  const { player, otherPlayer, conversation, agent, otherAgent, scenarioContext } =
+    await ctx.runQuery(selfInternal.queryPromptData, {
       worldId,
       playerId,
       otherPlayerId,
       conversationId,
-    },
-  );
+    });
   const prompt = [
     `You are ${player.name}, and you're currently in a conversation with ${otherPlayer.name}.`,
     `You've decided to leave the question and would like to politely tell them you're leaving the conversation.`,
   ];
-  prompt.push(...agentPrompts(otherPlayer, agent, otherAgent ?? null));
+  prompt.push(...agentPrompts(otherPlayer, agent, otherAgent ?? null, scenarioContext));
   prompt.push(
     `Below is the current chat history between you and ${otherPlayer.name}.`,
     `How would you like to tell them that you're leaving? Your response should be brief and within 200 characters.`,
@@ -189,6 +189,7 @@ function agentPrompts(
   otherPlayer: { name: string },
   agent: { identity: string; plan: string } | null,
   otherAgent: { identity: string; plan: string } | null,
+  scenarioContext?: ScenarioNpcContext,
 ): string[] {
   const prompt = [];
   if (agent) {
@@ -198,6 +199,7 @@ function agentPrompts(
   if (otherAgent) {
     prompt.push(`About ${otherPlayer.name}: ${otherAgent.identity}`);
   }
+  prompt.push(...scenarioNpcPrompt(scenarioContext));
   return prompt;
 }
 
@@ -348,6 +350,41 @@ export const queryPromptData = internalQuery({
         throw new Error(`Conversation ${lastTogether.conversationId} not found`);
       }
     }
+
+    // Only ground NPC dialogue in the active scene when this conversation
+    // actually includes the human participant whose life profile owns that
+    // scenario runtime. NPC-to-NPC background conversations remain autonomous.
+    const humanPlayer = player.human ? player : otherPlayer.human ? otherPlayer : undefined;
+    const npcPlayer = player.human ? otherPlayer : otherPlayer.human ? player : undefined;
+    let scenarioContext: ScenarioNpcContext | undefined;
+    if (humanPlayer?.human && npcPlayer) {
+      const lifeProfile = await ctx.db
+        .query('lifeProfiles')
+        .withIndex('byProfileKey', (q) => q.eq('profileKey', `ai-uni:${humanPlayer.human}`))
+        .first();
+      if (lifeProfile) {
+        const runtime = await ctx.db
+          .query('scenarioRuntimeStates')
+          .withIndex('byProfile', (q) => q.eq('profileId', lifeProfile._id))
+          .first();
+        if (runtime?.activeScenarioId) {
+          const scenario = getScenario(runtime.activeScenarioId);
+          const activeRun = runtime.activeRunId ? await ctx.db.get(runtime.activeRunId) : undefined;
+          const assignment = activeRun?.npcAssignments?.find(
+            (candidate) => candidate.playerId === npcPlayer.id,
+          );
+          const isLegacyUnassignedRun = activeRun && activeRun.npcAssignments === undefined;
+          if (scenario && (assignment || isLegacyUnassignedRun)) {
+            scenarioContext = buildScenarioNpcContext(
+              scenario,
+              npcPlayer.id,
+              assignment?.role,
+            );
+          }
+        }
+      }
+    }
+
     return {
       player: { name: playerDescription.name, ...player },
       otherPlayer: { name: otherPlayerDescription.name, ...otherPlayer },
@@ -359,6 +396,7 @@ export const queryPromptData = internalQuery({
         ...otherAgent,
       },
       lastConversation,
+      scenarioContext,
     };
   },
 });

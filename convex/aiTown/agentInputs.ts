@@ -5,7 +5,7 @@ import { Conversation, conversationInputs } from './conversation';
 import { movePlayer } from './movement';
 import { inputHandler } from './inputHandler';
 import { point } from '../util/types';
-import { Descriptions } from '../../data/characters';
+import { npcProfiles } from '../../data/npcProfiles';
 import { AgentDescription } from './agentDescription';
 import { Agent } from './agent';
 
@@ -121,7 +121,10 @@ export const agentInputs = {
       descriptionIndex: v.number(),
     },
     handler: (game, now, args) => {
-      const description = Descriptions[args.descriptionIndex];
+      const description = npcProfiles[args.descriptionIndex];
+      if (!description) {
+        throw new Error(`Invalid NPC profile index: ${args.descriptionIndex}`);
+      }
       const playerId = Player.join(
         game,
         now,
