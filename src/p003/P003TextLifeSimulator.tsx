@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
 import { generateLifeOrigin } from '../../convex/life/origin';
+import { type P003EffectMap } from '../../convex/life/p003Events';
+import { p003StarterStorylets } from '../../convex/life/p003Storylets';
 import {
-  p003StarterEvents,
-  type P003EffectMap,
-} from '../../convex/life/p003Events';
+  buildP003RunPlan,
+  type P003RunPlanItem,
+} from '../../convex/life/p003RunPlan';
 import {
   buildP003PersonalityReport,
   type P003DecisionRecord,
@@ -26,18 +28,23 @@ type MeterKey =
 type MeterState = Record<MeterKey, number>;
 
 type TextLifeSave = {
-  version: 1;
+  version: 2;
   seed: string;
   birthYear: number;
   origin: LifeOriginSnapshot;
   eventIndex: number;
   meters: MeterState;
   decisions: P003DecisionRecord[];
+  runPlan: P003RunPlanItem[];
+};
+
+type LegacyTextLifeSave = Omit<TextLifeSave, 'version' | 'runPlan'> & {
+  version: 1;
 };
 
 const STORAGE_KEY = 'p003-text-life-v1';
 
-const textLifeArc = [
+const legacyTextLifeArc = [
   { id: 'first_favorite_object', age: 0.7, stage: '婴儿期' },
   { id: 'toddler_forbidden_drawer', age: 3, stage: '幼儿期' },
   { id: 'first_public_meltdown', age: 3.5, stage: '幼儿期' },
@@ -80,12 +87,37 @@ const randomSeed = () => {
   return `p003-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 };
 
+const legacyRunPlan = (): P003RunPlanItem[] =>
+  legacyTextLifeArc.flatMap((point) => {
+    const storylet = p003StarterStorylets.find((item) => item.id === point.id);
+    if (!storylet) return [];
+    const stage = storylet.lifeStageBands[0];
+    if (!stage) return [];
+    return [{
+      storyletId: point.id,
+      age: point.age,
+      stage,
+      stageLabel: point.stage,
+      primaryDomain: storylet.primaryDomain,
+    }];
+  });
+
 const loadSave = (): TextLifeSave | undefined => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return undefined;
-    const parsed = JSON.parse(raw) as TextLifeSave;
-    return parsed.version === 1 ? parsed : undefined;
+    const parsed = JSON.parse(raw) as TextLifeSave | LegacyTextLifeSave;
+    if (parsed.version === 2) return parsed;
+    if (parsed.version === 1) {
+      const migrated: TextLifeSave = {
+        ...parsed,
+        version: 2,
+        runPlan: legacyRunPlan(),
+      };
+      saveLocal(migrated);
+      return migrated;
+    }
+    return undefined;
   } catch {
     return undefined;
   }
@@ -249,8 +281,9 @@ function DecisionPage({
   onChoose: (choiceId: string) => void;
   onRestart: () => void;
 }) {
-  const point = textLifeArc[save.eventIndex];
-  const event = p003StarterEvents.find((item) => item.id === point.id);
+  const point = save.runPlan[save.eventIndex];
+  if (!point) return null;
+  const event = p003StarterStorylets.find((item) => item.id === point.storyletId);
   if (!event) return null;
 
   const year = save.birthYear + Math.floor(point.age);
@@ -271,14 +304,14 @@ function DecisionPage({
         <button onClick={onRestart}>重开</button>
       </header>
 
-      <Progress current={save.eventIndex + 1} total={textLifeArc.length} />
+      <Progress current={save.eventIndex + 1} total={save.runPlan.length} />
 
       <div className="life-text-play-grid">
         <aside className="life-text-margin">
           <div className="life-text-age-block">
             <span>{year}</span>
             <strong>{formatAge(point.age)}</strong>
-            <small>{point.stage}</small>
+            <small>{point.stageLabel}</small>
           </div>
 
           <div className="life-text-current-state">
@@ -306,7 +339,7 @@ function DecisionPage({
           <div className="life-text-chapter-number">
             MEMORY {String(save.eventIndex + 1).padStart(2, '0')}
           </div>
-          <span className="life-text-stage">{point.stage} · {formatAge(point.age)}</span>
+          <span className="life-text-stage">{point.stageLabel} · {formatAge(point.age)}</span>
           <h1>{event.title}</h1>
           <p className="life-text-setup">{event.setup}</p>
 
@@ -467,7 +500,9 @@ function ReportPage({
   return (
     <main className="life-text-shell life-text-report">
       <header className="life-text-report-hero">
-        <span>END OF RUN / 79 岁</span>
+        <span>
+          END OF RUN / {formatAge(save.runPlan[save.runPlan.length - 1]?.age ?? 79)}
+        </span>
         <h1>{report.title}</h1>
         <p>{report.subtitle}</p>
         <div className="life-text-report-actions">
@@ -686,13 +721,14 @@ export default function P003TextLifeSimulator() {
 
   const start = () => {
     const next: TextLifeSave = {
-      version: 1,
+      version: 2,
       seed,
       birthYear,
       origin,
       eventIndex: 0,
       meters: initialMeters(origin),
       decisions: [],
+      runPlan: buildP003RunPlan(seed, p003StarterStorylets),
     };
     saveLocal(next);
     setSave(next);
@@ -707,9 +743,9 @@ export default function P003TextLifeSimulator() {
 
   const choose = (choiceId: string) => {
     if (!save) return;
-    const point = textLifeArc[save.eventIndex];
+    const point = save.runPlan[save.eventIndex];
     if (!point) return;
-    const event = p003StarterEvents.find((item) => item.id === point.id);
+    const event = p003StarterStorylets.find((item) => item.id === point.storyletId);
     const choice = event?.choices.find((item) => item.id === choiceId);
     if (!event || !choice) return;
 
@@ -745,7 +781,7 @@ export default function P003TextLifeSimulator() {
     );
   }
 
-  if (save.eventIndex >= textLifeArc.length) {
+  if (save.eventIndex >= save.runPlan.length) {
     return <ReportPage save={save} onRestart={restart} />;
   }
 
