@@ -1,6 +1,15 @@
-import { buildP003PersonalityReport } from './p003Personality';
+import { p003StarterEvents } from './p003Events';
+import { buildP003PersonalityReport, p003ChoiceSignals } from './p003Personality';
 
 describe('p003 personality report', () => {
+  test('every authored decision choice has an explicit analysis signal', () => {
+    for (const event of p003StarterEvents) {
+      for (const choice of event.choices) {
+        expect(p003ChoiceSignals[`${event.id}:${choice.id}`]).toBeDefined();
+      }
+    }
+  });
+
   test('builds conservative scores from repeated behavioral evidence', () => {
     const report = buildP003PersonalityReport([
       {
