@@ -77,6 +77,16 @@ export type P003CharacterBlueprint = {
   arcThreads: P003CharacterArcThread[];
   narrativeKernel?: P003CharacterNarrativeKernel;
   surfaceProfile?: P003CharacterSurfaceProfile;
+  sensitivities?: string[];
+  selfProtectivePatterns?: string[];
+  hiddenHistory?: P003HiddenHistoryItem[];
+};
+
+export type P003HiddenHistoryItem = {
+  id: string;
+  summary: string;
+  state: 'private' | 'hinted' | 'revealed';
+  revealKeys: string[];
 };
 
 export type P003RelationshipMemory = {
@@ -136,6 +146,7 @@ export const p003CharacterWritingRules = [
   'Use Want / Need / Fear / Contradiction as dramatic writing tools, never as clinical labels.',
   'Deep character variation should come from a finite auditable narrative-archetype grid before surface randomness is added.',
   'Surface personality and communication style may change how an archetype is expressed, but must not overwrite the deeper narrative kernel.',
+  'Sensitive themes, self-protective patterns and hidden history are structured separately so they can be hinted, revealed and called back later instead of dumped into exposition.',
   'Formative pressure → compensatory strategy → developmental need is a narrative causal hypothesis, not a factual psychological diagnosis.',
   'No character should be reducible to one adjective such as controlling, avoidant or kind.',
   'A recurring NPC should be able to surprise the player while remaining consistent with accumulated history.',
