@@ -220,6 +220,19 @@ export const generateP003CoreCast = (
         `${seed}:${character.id}`,
         enrichment.narrativeKernel,
       ),
+      sensitivities: [enrichment.narrativeKernel.coreFear],
+      selfProtectivePatterns: [enrichment.narrativeKernel.compensatoryStrategy],
+      hiddenHistory: [
+        {
+          id: `formative:${character.id}`,
+          summary: enrichment.narrativeKernel.formativePressure,
+          state: 'private' as const,
+          revealKeys: [
+            `character:${character.id}:trust`,
+            `character:${character.id}:callback`,
+          ],
+        },
+      ],
       arcThreads: [
         ...character.arcThreads,
         {
