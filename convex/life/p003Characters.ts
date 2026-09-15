@@ -28,6 +28,22 @@ export type P003CharacterArcThread = {
   status: 'latent' | 'active' | 'resolved' | 'reopened';
 };
 
+export type P003CharacterArcType = 'positive_change' | 'negative_change' | 'flat' | 'open';
+
+export type P003CharacterNarrativeKernel = {
+  archetypeKey: string;
+  archetypeName: string;
+  oneLiner: string;
+  formativePressure: string;
+  compensatoryStrategy: string;
+  developmentalNeed: string;
+  coreDesire: string;
+  coreFear: string;
+  arcType: P003CharacterArcType;
+  arcQuestion: string;
+  source: 'p003_archetype_grid' | 'external_persona';
+};
+
 export type P003CharacterBlueprint = {
   id: string;
   displayName: string;
@@ -43,6 +59,7 @@ export type P003CharacterBlueprint = {
   constraints: string[];
   privateFacts: string[];
   arcThreads: P003CharacterArcThread[];
+  narrativeKernel?: P003CharacterNarrativeKernel;
 };
 
 export type P003RelationshipMemory = {
@@ -100,6 +117,8 @@ export const addRelationshipMemory = (
 export const p003CharacterWritingRules = [
   'NPCs have their own goals, resources and life changes; they are not props built only to test the player.',
   'Use Want / Need / Fear / Contradiction as dramatic writing tools, never as clinical labels.',
+  'Deep character variation should come from a finite auditable narrative-archetype grid before surface randomness is added.',
+  'Formative pressure → compensatory strategy → developmental need is a narrative causal hypothesis, not a factual psychological diagnosis.',
   'No character should be reducible to one adjective such as controlling, avoidant or kind.',
   'A recurring NPC should be able to surprise the player while remaining consistent with accumulated history.',
   'Parents, partners, friends and coworkers age and experience linked lives alongside the player.',
