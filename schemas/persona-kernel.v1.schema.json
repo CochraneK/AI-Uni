@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bjtu.example/schemas/persona-kernel.v1.schema.json",
+  "title": "BJTU Persona Kernel v1",
+  "description": "Language-neutral bridge between persona-generation systems such as AI-persona and runtime simulations such as P003.",
+  "type": "object",
+  "required": ["schemaVersion", "sourceSystem", "sourcePersonaId", "demographics", "psychology"],
+  "properties": {
+    "schemaVersion": { "const": "persona-kernel.v1" },
+    "sourceSystem": { "type": "string", "minLength": 1 },
+    "sourcePersonaId": { "type": "string", "minLength": 1 },
+    "label": { "type": "string" },
+    "archetype": {
+      "type": "object",
+      "properties": {
+        "key": { "type": "string" },
+        "name": { "type": "string" },
+        "oneLiner": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "demographics": {
+      "type": "object",
+      "properties": {
+        "age": { "type": "number", "minimum": 0, "maximum": 120 },
+        "birthYear": { "type": "integer" },
+        "gender": { "type": "string" },
+        "education": { "type": "string" },
+        "locale": { "type": "string" },
+        "maritalStatus": { "type": "string" },
+        "socialPosition": {
+          "type": "object",
+          "properties": {
+            "occupationCode": { "type": "string" },
+            "occupationLabel": { "type": "string" },
+            "incomeBand": { "type": "string" },
+            "classPosition": { "type": "string" },
+            "authorityLevel": { "type": "string" },
+            "communityStatus": { "type": "string" }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "psychology": {
+      "type": "object",
+      "properties": {
+        "ocean": {
+          "type": "object",
+          "properties": {
+            "O": { "type": "number" },
+            "C": { "type": "number" },
+            "E": { "type": "number" },
+            "A": { "type": "number" },
+            "N": { "type": "number" }
+          },
+          "additionalProperties": false
+        },
+        "personalityTags": { "type": "array", "items": { "type": "string" } },
+        "cognitiveStyles": { "type": "array", "items": { "type": "string" } },
+        "copingStyles": { "type": "array", "items": { "type": "string" } },
+        "values": { "type": "array", "items": { "type": "string" } },
+        "socialRelations": { "type": "object" },
+        "communicationStyle": { "type": "object" },
+        "lifestyleHabits": { "type": "object" },
+        "skillsAbilities": { "type": "object" },
+        "coreDesire": { "type": "string" },
+        "coreFear": { "type": "string" },
+        "formativeWound": { "type": "string" },
+        "compensatoryDesire": { "type": "string" },
+        "innerNeed": { "type": "string" },
+        "arcType": { "type": "string" },
+        "arcDescription": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "health": {
+      "type": "object",
+      "properties": {
+        "mentalHealthStatus": {
+          "type": "string",
+          "enum": ["healthy", "condition", "unknown"]
+        },
+        "primaryConditionId": { "type": "string" },
+        "comorbidConditionIds": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "symptomTraits": { "type": "object" },
+        "visibility": {
+          "type": "string",
+          "enum": ["private_runtime", "research_only", "player_visible_if_narratively_relevant"]
+        }
+      },
+      "additionalProperties": true
+    },
+    "privateNarrative": {
+      "type": "object",
+      "properties": {
+        "sensitivities": { "type": "array", "items": { "type": "string" } },
+        "selfProtectivePatterns": { "type": "array", "items": { "type": "string" } },
+        "hiddenExperiences": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "priorLifeEvents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["title"],
+        "properties": {
+          "id": { "type": "string" },
+          "age": { "type": "number", "minimum": 0, "maximum": 120 },
+          "year": { "type": "integer" },
+          "sourceStage": { "type": "string" },
+          "sourceDomain": { "type": "string" },
+          "title": { "type": "string", "minLength": 1 },
+          "valence": { "type": "string" },
+          "description": { "type": "string" },
+          "p003Stage": { "type": "string" },
+          "p003PrimaryDomain": { "type": "string" },
+          "pressureShapes": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "tags": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": true
+      }
+    },
+    "generationMetadata": {
+      "type": "object",
+      "properties": {
+        "seed": { "type": ["string", "number"] },
+        "cohort": { "type": "string" },
+        "eraTags": { "type": "array", "items": { "type": "string" } },
+        "sourceVersion": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}
