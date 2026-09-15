@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useMemo } from 'react';
 import { ConvexReactClient, ConvexProvider } from 'convex/react';
 // import { ConvexProviderWithClerk } from 'convex/react-clerk';
 // import { ClerkProvider, useAuth } from '@clerk/clerk-react';
@@ -17,9 +17,11 @@ function convexUrl(): string {
   return url;
 }
 
-const convex = new ConvexReactClient(convexUrl(), { unsavedChangesWarning: false });
-
 export default function ConvexClientProvider({ children }: { children: ReactNode }) {
+  const convex = useMemo(
+    () => new ConvexReactClient(convexUrl(), { unsavedChangesWarning: false }),
+    [],
+  );
   return (
     // <ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string}>
     // <ConvexProviderWithClerk client={convex} useAuth={useAuth}>

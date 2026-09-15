@@ -1,4 +1,12 @@
 export type LifeSeasonId =
+  | 'origin'
+  | 'early_childhood'
+  | 'school_age'
+  | 'adolescence'
+  | 'emerging_adulthood'
+  | 'early_adulthood'
+  | 'middle_adulthood'
+  | 'later_adulthood'
   | 'university'
   | 'early_career'
   | 'partnership_family'
@@ -8,6 +16,10 @@ export type LifeSeasonId =
   | 'life_review';
 
 export type LifeStageId =
+  | 'infancy_foundations'
+  | 'early_childhood_autonomy'
+  | 'middle_childhood_competence'
+  | 'adolescence_identity'
   | 'late_adolescence_identity'
   | 'emerging_adulthood'
   | 'early_adulthood_intimacy'
@@ -29,7 +41,10 @@ export type CareerStage =
   | 'not_applicable';
 
 export type RelationshipType =
+  | 'caregiver'
   | 'parent'
+  | 'grandparent'
+  | 'peer'
   | 'sibling'
   | 'roommate'
   | 'friend'
@@ -44,6 +59,15 @@ export type RelationshipType =
   | 'community';
 
 export type DevelopmentalTaskId =
+  | 'caregiving_security'
+  | 'basic_regulation'
+  | 'autonomy_skills'
+  | 'play_exploration'
+  | 'learning_foundations'
+  | 'peer_belonging'
+  | 'school_competence'
+  | 'adolescent_autonomy'
+  | 'values_exploration'
   | 'identity_exploration'
   | 'autonomy_from_family'
   | 'belonging'
@@ -81,6 +105,12 @@ export type IdentityDomain =
   | 'lifestyle';
 
 export type LifeEventCategory =
+  | 'birth'
+  | 'caregiving'
+  | 'play'
+  | 'school'
+  | 'milestone'
+  | 'neighborhood'
   | 'education'
   | 'exam'
   | 'holiday'
@@ -194,8 +224,48 @@ export type LifeChapterDefinition = {
   eventPools: LifeEventCategory[];
 };
 
+export type LifeOriginRegionType = 'urban_core' | 'urban_periphery' | 'town' | 'rural';
+
+export type LifeOriginHouseholdStructure =
+  | 'two_caregiver'
+  | 'single_caregiver'
+  | 'multigenerational'
+  | 'blended_or_other';
+
+export type LifeOriginSnapshot = {
+  seed: string;
+  birthYear: number;
+  regionType: LifeOriginRegionType;
+  householdStructure: LifeOriginHouseholdStructure;
+  caregiverCount: number;
+  householdMaterialSecurity: number;
+  caregivingStability: number;
+  learningAccess: number;
+  neighborhoodOpportunity: number;
+  familySupportDensity: number;
+  contextTags: string[];
+};
+
+export type LifeResourceState = {
+  physicalEnergy: number;
+  healthCapacity: number;
+  householdMaterialSecurity: number;
+  timeAutonomy: number;
+  socialSupport: number;
+  learningOpportunity: number;
+};
+
+export type LifeNeedsState = {
+  autonomy: number;
+  competence: number;
+  relatedness: number;
+};
+
 export type LifeProfileSnapshot = {
   universityProfileId: string;
+  origin?: LifeOriginSnapshot;
+  resources?: LifeResourceState;
+  needs?: LifeNeedsState;
   age: number;
   season: LifeSeasonId;
   lifeStage: LifeStageId;
