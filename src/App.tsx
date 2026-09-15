@@ -1,3 +1,4 @@
+import P003TextLifeSimulator from './p003/P003TextLifeSimulator.tsx';
 import Game from './components/Game.tsx';
 
 import { ToastContainer } from 'react-toastify';
@@ -18,6 +19,14 @@ import { MAX_HUMAN_PLAYERS } from '../convex/constants.ts';
 import PoweredByConvex from './components/PoweredByConvex.tsx';
 
 export default function Home() {
+  const mode = new URLSearchParams(window.location.search).get('mode');
+  if (mode !== 'campus') {
+    return <P003TextLifeSimulator />;
+  }
+  return <CampusHome />;
+}
+
+function CampusHome() {
   const [helpModalOpen, setHelpModalOpen] = useState(false);
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-between font-body game-background">
