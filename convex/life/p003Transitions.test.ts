@@ -1,6 +1,7 @@
 import { generateLifeOrigin } from './origin';
 import { createP003LifeProfileSnapshot } from './p003Model';
 import { advanceP003ChapterClock } from './p003Transitions';
+import type { LifeProfileSnapshot } from './types';
 
 describe('p003 lifespan chapter clock', () => {
   test('starts at birth and transitions into early childhood', () => {
@@ -18,7 +19,7 @@ describe('p003 lifespan chapter clock', () => {
   });
 
   test('does not force university at the transition to adulthood', () => {
-    let snapshot = {
+    let snapshot: LifeProfileSnapshot = {
       ...createP003LifeProfileSnapshot(generateLifeOrigin('adult', 2000)),
       age: 17,
       season: 'adolescence' as const,
