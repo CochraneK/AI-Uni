@@ -18,7 +18,7 @@ const researchOnlyIds = new Set(
 const minAgeForRoles: Partial<Record<string, number>> = {
   manager: 16,
   coworker: 14,
-  partner: 12,
+  romantic_partner: 12,
   spouse: 16,
   child: 12,
 };
