@@ -312,7 +312,6 @@ export const p003StarterEvents: P003LifeEventDefinition[] = [
     delayedHooks: ['life_review_callback', 'regret_integration'],
     designNote: '终章不计算人生总分，而是回调真实发生过的历史。',
   },
-,
   {
     id: 'first_favorite_object',
     title: '你总想抓住的那样东西',
