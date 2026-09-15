@@ -42,11 +42,18 @@ export type P003PersonalityDimensionResult = {
   summary: string;
 };
 
+export type P003PersonalityNarrativeSection = {
+  id: 'overview' | 'relationships' | 'stress' | 'decisions' | 'tension';
+  title: string;
+  text: string;
+};
+
 export type P003PersonalityReport = {
   title: string;
   subtitle: string;
   dimensions: P003PersonalityDimensionResult[];
   strongestPatterns: P003PersonalityDimensionResult[];
+  narrativeSections: P003PersonalityNarrativeSection[];
   caution: string;
 };
 
@@ -450,11 +457,86 @@ export const buildP003PersonalityReport = (
     })
     .slice(0, 5);
 
+  const byId = (id: P003PersonalityDimensionId) =>
+    dimensions.find((item) => item.id === id)!;
+  const openness = byId('big5.openness');
+  const conscientiousness = byId('big5.conscientiousness');
+  const extraversion = byId('big5.extraversion');
+  const agreeableness = byId('big5.agreeableness');
+  const sensitivity = byId('big5.neuroticism');
+  const autonomy = byId('behavior.autonomy');
+  const supportSeeking = byId('behavior.support_seeking');
+  const riskTaking = byId('behavior.risk_taking');
+  const problemFocused = byId('coping.problem_focused');
+  const emotionFocused = byId('coping.emotion_focused');
+  const avoidance = byId('coping.avoidance');
+  const reappraisal = byId('coping.reappraisal');
+
+  const narrativeSections: P003PersonalityNarrativeSection[] = [
+    {
+      id: 'overview',
+      title: '整体画像',
+      text:
+        openness.band === 'high'
+          ? `你在这条人生里多次选择靠近新信息、新关系或替代路线。与此同时，${conscientiousness.band === 'high' ? '你并不是单纯追求变化，而常常会把探索变成计划、复盘或持续投入。' : conscientiousness.band === 'low' ? '你更愿意允许路线在过程中变化，而不是过早把自己固定在一个结构里。' : '你会根据资源和风险决定什么时候探索、什么时候先保持稳定。'}`
+          : openness.band === 'low'
+            ? `你更常先确认熟悉感、边界和可预测性，再决定是否进入新的选择。${autonomy.band === 'high' ? '这种谨慎并不等于被动：在真正重要的节点上，你仍然倾向自己做决定。' : '对你而言，稳定本身常常就是一种重要资源。'}`
+            : `你的人生选择没有稳定落在“不断探索”或“始终求稳”的单一方向。你更像是在机会、成本和关系之间动态调整。${autonomy.band === 'high' ? '但当事情涉及自己的路线时，自主决定仍然比较突出。' : ''}`,
+    },
+    {
+      id: 'relationships',
+      title: '关系风格',
+      text:
+        supportSeeking.band === 'high'
+          ? `你并不把求助看成失去独立。在压力、照护或组织问题中，你多次愿意调用可信的人或制度资源。${agreeableness.band === 'high' ? '同时，你也较常考虑互惠、协商和他人的需要。' : '不过，你不会为了维持表面和谐就放弃自己的边界。'}`
+          : supportSeeking.band === 'low'
+            ? `你更常先依靠自己、观察或暂时拉开距离，而不是立即把问题交给关系网络。${extraversion.band === 'low' ? '独处和低刺激空间对你可能具有恢复功能。' : '这并不意味着你拒绝关系，而是求助通常不是第一反应。'}`
+            : `你对关系的使用很看情境：有些时候主动靠近，有些时候保留距离。${agreeableness.band === 'high' ? '整体上，你仍较重视关系互惠和协商。' : '你不会把“维持关系”当成每一次决策的最高优先级。'}`,
+    },
+    {
+      id: 'stress',
+      title: '压力与应对',
+      text:
+        problemFocused.band === 'high'
+          ? `面对压力时，你多次表现出“先弄清楚能做什么”的倾向：搜集信息、复盘、协商、记录或调用资源。${reappraisal.band === 'high' ? '当旧方案不再合适时，你也比较愿意重新解释问题并修改路线。' : avoidance.band === 'high' ? '但你也会在负荷过高时先退出一段时间，再回来处理。' : '这种处理方式相对稳定。'}`
+          : avoidance.band === 'high'
+            ? `压力升高时，你比较常通过暂停、退出、转移注意或延迟处理来给自己腾出空间。${emotionFocused.band === 'high' ? '与此同时，你也会优先处理感受和恢复，再决定下一步。' : '这种策略在短期能降低刺激，但长期效果仍取决于你是否重新回到问题本身。'}`
+            : `你没有固定使用一种应对方式。问题解决、情绪恢复、等待和重新解释会根据情境交替出现。${sensitivity.band === 'high' ? '不过，在不确定或关系风险中，你的注意会更容易持续停留在潜在威胁上。' : ''}`,
+    },
+    {
+      id: 'decisions',
+      title: '决策方式',
+      text:
+        autonomy.band === 'high'
+          ? `重要节点上，你更常保留自己的决定权。${riskTaking.band === 'high' ? '当潜在收益足够大时，你愿意承担不确定性来换取新的机会或更大的自主空间。' : riskTaking.band === 'low' ? '不过，你通常更偏好可逆、可观察后果的方案，而不是为了证明独立去冒险。' : '你并不是固定的冒险型或保守型，而会比较成本和可逆性。'}`
+          : autonomy.band === 'low'
+            ? `你较常借助已有规则、关系或环境安排来降低决策负担。${conscientiousness.band === 'high' ? '一旦进入明确结构，你往往能够持续投入。' : '你更重视情境本身，而不是坚持“必须完全自己决定”。'}`
+            : `你在自主决定和借助环境之间保持弹性。${riskTaking.band === 'high' ? '遇到值得尝试的机会时，你会明显向探索倾斜。' : '是否行动通常取决于风险、资源和关系背景。'}`,
+    },
+    {
+      id: 'tension',
+      title: '最值得注意的内在张力',
+      text:
+        autonomy.band === 'high' && agreeableness.band === 'high'
+          ? '你同时重视自己的决定权和关系中的互惠。这意味着很多真正困难的选择不会是“自我 vs. 他人”这么简单，而是怎样在不牺牲自己路线的情况下继续照顾重要关系。'
+          : autonomy.band === 'high' && supportSeeking.band === 'high'
+            ? '你的独立与求助并不冲突：你更像是在保留最终决定权的同时，把他人和制度当作可调用资源。'
+            : problemFocused.band === 'high' && avoidance.band === 'high'
+              ? '你同时表现出直接解决问题和暂时退出的倾向。更像是“先拉开距离，再回来处理”，而不是始终正面推进或始终回避。'
+              : openness.band === 'high' && conscientiousness.band === 'high'
+                ? '你既想探索新的可能，又不太愿意让探索完全失控。很多选择会呈现“先打开选项，再把它结构化”的模式。'
+                : sensitivity.band === 'high' && reappraisal.band === 'high'
+                  ? '你对不确定和关系风险比较敏感，但也愿意在获得新信息后修正原来的解释。敏感并不必然等于僵化。'
+                  : '这条人生没有出现特别强的单一矛盾。你的许多选择更依赖当时的资源、关系和具体情境，而不是被一个固定风格贯穿到底。',
+    },
+  ];
+
   return {
     title: '这一生的人格与行为画像',
     subtitle: `基于 ${decisions.length} 个跨人生阶段的决策模式生成`,
     dimensions,
     strongestPatterns,
+    narrativeSections,
     caution:
       '这是一份基于游戏选择的行为画像，不是正式人格测验、临床评估或诊断。它更适合用来回看“你在这个世界里反复怎样选择”，而不是定义现实中的你。',
   };
