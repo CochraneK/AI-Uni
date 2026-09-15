@@ -14,6 +14,7 @@ export type P003CoverageCell = {
   storyletCount: number;
   callbackCount: number;
   narrativeFunctions: P003NarrativeFunctionId[];
+  pressureShapes: string[];
   constructIds: string[];
 };
 
@@ -40,6 +41,9 @@ export const buildP003CoverageMatrix = (
             storylet.delayedHooks.length > 0,
         ).length,
         narrativeFunctions: [...new Set(matching.map((storylet) => storylet.narrativeFunction))],
+        pressureShapes: [
+          ...new Set(matching.flatMap((storylet) => storylet.pressureShapes)),
+        ],
         constructIds: [
           ...new Set(
             matching.flatMap((storylet) =>
@@ -71,7 +75,7 @@ export const findP003CoverageGaps = (
       recommendation:
         cell.storyletCount === 0
           ? 'Add at least one ordinary-life storylet before adding another storylet to already dense cells.'
-          : 'Add a second storylet with a different narrative function, relationship pattern or consequence shape.',
+          : 'Add a second storylet with a different narrative function, relationship pattern, pressure shape or consequence shape.',
     }));
 
 export const coverageForConstruct = (
