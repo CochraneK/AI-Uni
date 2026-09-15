@@ -30,6 +30,22 @@ export type P003CharacterArcThread = {
 
 export type P003CharacterArcType = 'positive_change' | 'negative_change' | 'flat' | 'open';
 
+export type P003CharacterSurfaceProfile = {
+  ocean?: Partial<Record<'O' | 'C' | 'E' | 'A' | 'N', number>>;
+  communication:
+    | 'concise'
+    | 'warm'
+    | 'direct'
+    | 'reflective'
+    | 'expressive'
+    | 'measured';
+  disclosure: 'private' | 'selective' | 'open';
+  conflict: 'avoid' | 'appease' | 'direct' | 'repair' | 'compete';
+  planning: 'spontaneous' | 'adaptive' | 'structured';
+  socialEnergy: 'solitary' | 'selective' | 'social';
+  source: 'p003_archetype_expression' | 'external_persona';
+};
+
 export type P003CharacterNarrativeKernel = {
   archetypeKey: string;
   archetypeName: string;
@@ -60,6 +76,7 @@ export type P003CharacterBlueprint = {
   privateFacts: string[];
   arcThreads: P003CharacterArcThread[];
   narrativeKernel?: P003CharacterNarrativeKernel;
+  surfaceProfile?: P003CharacterSurfaceProfile;
 };
 
 export type P003RelationshipMemory = {
@@ -118,6 +135,7 @@ export const p003CharacterWritingRules = [
   'NPCs have their own goals, resources and life changes; they are not props built only to test the player.',
   'Use Want / Need / Fear / Contradiction as dramatic writing tools, never as clinical labels.',
   'Deep character variation should come from a finite auditable narrative-archetype grid before surface randomness is added.',
+  'Surface personality and communication style may change how an archetype is expressed, but must not overwrite the deeper narrative kernel.',
   'Formative pressure → compensatory strategy → developmental need is a narrative causal hypothesis, not a factual psychological diagnosis.',
   'No character should be reducible to one adjective such as controlling, avoidant or kind.',
   'A recurring NPC should be able to surprise the player while remaining consistent with accumulated history.',
