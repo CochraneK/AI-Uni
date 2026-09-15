@@ -1,5 +1,10 @@
 import { constructRegistry } from '../assessment/constructs';
 import { createP003RelationshipState } from './p003Characters';
+import {
+  characterAgeAtPlayerAge,
+  generateP003CoreCast,
+} from './p003Cast';
+import { generateLifeOrigin } from './origin';
 import { buildP003CoverageMatrix } from './p003Coverage';
 import { p003LifeDomains, p003StageBands } from './p003Ontology';
 import {
@@ -96,6 +101,23 @@ describe('P003 extensible architecture', () => {
     );
     expect(selected.every((storylet) => storylet.prerequisites.ageRange[0] <= 8)).toBe(true);
     expect(selected.every((storylet) => storylet.prerequisites.ageRange[1] >= 8)).toBe(true);
+  });
+
+  test('linked-life cast is deterministic and ages alongside the player', () => {
+    const origin = generateLifeOrigin('cast-seed', 2000);
+    const castA = generateP003CoreCast('cast-seed', origin);
+    const castB = generateP003CoreCast('cast-seed', origin);
+    expect(castA).toEqual(castB);
+    const caregiver = castA.find((character) => character.id === 'primary-caregiver');
+    expect(caregiver).toBeDefined();
+    const ageAt5 = caregiver
+      ? characterAgeAtPlayerAge(caregiver, 2000, 5)
+      : undefined;
+    const ageAt45 = caregiver
+      ? characterAgeAtPlayerAge(caregiver, 2000, 45)
+      : undefined;
+    expect(ageAt5).toBeDefined();
+    expect(ageAt45).toBe((ageAt5 ?? 0) + 40);
   });
 
   test('relationship state is persistent and character-specific', () => {
