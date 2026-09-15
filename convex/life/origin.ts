@@ -1,4 +1,5 @@
 import { seededUnitInterval, selectWeightedLifeOption } from './influence';
+import { p003DefaultPopulationPriors } from './p003PopulationPriors';
 import type {
   EcologicalContextSnapshot,
   FamilySystemSnapshot,
@@ -19,26 +20,34 @@ const weightedPick = <T>(
 ): T => selectWeightedLifeOption(options, `${seed}:${key}`) ?? options[0].value;
 
 export const generateLifeOrigin = (seed: string, birthYear = 2000): LifeOriginSnapshot => {
-  const regionType = weightedPick<LifeOriginRegionType>(seed, 'region', [
-    { value: 'urban_core', weight: 0.28 },
-    { value: 'urban_periphery', weight: 0.28 },
-    { value: 'town', weight: 0.24 },
-    { value: 'rural', weight: 0.2 },
-  ]);
+  const priors = p003DefaultPopulationPriors;
 
-  const householdStructure = weightedPick<LifeOriginHouseholdStructure>(seed, 'household', [
-    { value: 'two_caregiver', weight: 0.55 },
-    { value: 'single_caregiver', weight: 0.14 },
-    { value: 'multigenerational', weight: 0.23 },
-    { value: 'blended_or_other', weight: 0.08 },
-  ]);
+  const regionType = weightedPick<LifeOriginRegionType>(
+    seed,
+    'region',
+    priors.region as [
+      { value: LifeOriginRegionType; weight: number },
+      ...Array<{ value: LifeOriginRegionType; weight: number }>,
+    ],
+  );
 
-  const materialBand = weightedPick(seed, 'material-band', [
-    { value: 0.22, weight: 0.2 },
-    { value: 0.42, weight: 0.34 },
-    { value: 0.62, weight: 0.3 },
-    { value: 0.82, weight: 0.16 },
-  ]) ?? 0.5;
+  const householdStructure = weightedPick<LifeOriginHouseholdStructure>(
+    seed,
+    'household',
+    priors.householdStructure as [
+      { value: LifeOriginHouseholdStructure; weight: number },
+      ...Array<{ value: LifeOriginHouseholdStructure; weight: number }>,
+    ],
+  );
+
+  const materialBand = weightedPick(
+    seed,
+    'material-band',
+    priors.materialBands as [
+      { value: number; weight: number },
+      ...Array<{ value: number; weight: number }>,
+    ],
+  ) ?? 0.5;
 
   const regionOpportunity = {
     urban_core: 0.72,
@@ -72,6 +81,7 @@ export const generateLifeOrigin = (seed: string, birthYear = 2000): LifeOriginSn
   );
 
   const contextTags = [
+    `origin-priors:${priors.id}@${priors.version}`,
     `region:${regionType}`,
     `household:${householdStructure}`,
     householdMaterialSecurity < 0.35 ? 'material_constraint' : 'material_buffer',
