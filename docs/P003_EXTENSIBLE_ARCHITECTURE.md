@@ -346,3 +346,114 @@ Research anchors used to constrain design:
 8. Every major choice should leave history that can matter later.
 9. NPCs should have lives independent of the player.
 10. The world should remember the player.
+
+## 14. AI-persona interoperability
+
+P003 is designed to interoperate with the separate **AI-persona** project without copying its implementation.
+
+### Current AI-persona strengths
+
+The current repository already contains:
+- ICD-11 + DSM-5-TR diagnosis ontology;
+- diagnosis-aware demographic stratification;
+- occupation taxonomy;
+- OCEAN/personality generation;
+- archetype grids;
+- social/values/communication/lifestyle/skills dimensions;
+- life-event generation;
+- narrative motives and character-arc fields.
+
+These are useful **persona-generation priors** for P003 NPCs.
+
+### Important architectural boundary
+
+AI-persona currently uses a diagnosis-driven generation chain. P003 must not inherit “diagnosis = identity”.
+
+For cross-project use:
+
+```text
+AI-persona
+  generates a Persona Kernel
+        ↓
+P003
+  instantiates a persistent character
+        ↓
+runtime life events / relationships / memories / change
+```
+
+A condition is one optional health layer of the kernel. It must never replace:
+- personality;
+- values;
+- occupation;
+- social role;
+- relationship history;
+- life-stage context;
+- structural opportunity;
+- narrative goals.
+
+### Persona Kernel vs Runtime State
+
+**Persona Kernel** is relatively stable source material:
+- demographic baseline;
+- birth cohort / era;
+- gender;
+- education;
+- occupation / social position;
+- OCEAN and personality tags;
+- values;
+- communication/lifestyle/skills;
+- core desire/fear;
+- formative wound / desire / need;
+- optional health layer;
+- prior life-event seeds.
+
+**P003 Runtime State** evolves inside the simulation:
+- current resources;
+- current relationships;
+- accumulated memories;
+- trust / closeness / repair;
+- new Storylet eligibility;
+- delayed consequences;
+- current stress / support;
+- later life changes;
+- player-specific shared history.
+
+P003 must never silently overwrite the imported kernel. New runtime evidence is additive and separately traceable.
+
+### Taxonomy mismatch is explicit
+
+AI-persona currently has a coarser **6-domain × 4-stage** event taxonomy. P003 uses **10 domains × 9 lifespan bands**.
+
+Therefore import mapping is deliberately treated as lossy legacy compatibility:
+- family → family & kinship
+- education → education & learning
+- occupation → work & career
+- health → body & health
+- finance → material life
+- interpersonal → friendship/social by default
+
+Future AI-persona should ideally export the richer shared ontology directly rather than requiring these mappings.
+
+### Shared-schema direction
+
+The long-term shared asset should be a language-neutral, versioned human-persona schema rather than direct Python↔TypeScript imports.
+
+Recommended future shape:
+
+```text
+Human Persona Ontology
+├── demographic / cohort
+├── development stage
+├── era / macro context
+├── gender / identity
+├── occupation / social position
+├── personality / temperament
+├── values / communication / lifestyle / skills
+├── family / relationship structure
+├── physical & mental health layer
+├── life-event history
+├── current state
+└── narrative / archetype metadata
+```
+
+P003 can consume this schema for NPC generation while preserving its own dynamic simulation engine.
