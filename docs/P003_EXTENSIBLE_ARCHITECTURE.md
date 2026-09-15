@@ -500,6 +500,22 @@ P003 deliberately reuses the strongest **engineering ideas** from the separate A
 6. **Seed reproducibility**
    - AI-persona and P003 now share the same philosophy: generated people/lives should be reproducible from stable seeds wherever possible.
 
+7. **Deep kernel vs surface expression**
+   - P003 keeps a character's deep narrative kernel separate from communication/disclosure/conflict/planning/social-energy style.
+   - External OCEAN and communication/lifestyle fields map into the surface layer rather than replacing the deep archetype.
+   - Native P003 NPCs also get deterministic surface-expression profiles so two characters with related motives need not feel identical in dialogue.
+
+8. **Structured private narrative**
+   - AI-persona triggers, safety behaviors and hidden experiences are adapted into sensitivities, self-protective patterns and hidden-history records.
+   - Hidden history has explicit private/hinted/revealed state and reveal keys; it is not dumped into the first scene.
+   - Native P003 characters get the same structure, which enables trust-based reveals and decades-later callbacks.
+
+9. **Event impact without clinical scoring**
+   - P003 borrows the idea that life events need more than a positive/negative label.
+   - Pressure shapes are translated into disruption, uncontrollability, social exposure, duration, resource cost and reversibility.
+   - These values drive narrative/world consequences only. They are not LCU totals, ACE scores or disorder-risk estimates.
+   - Run-plan sampling balances both life-domain diversity and pressure-shape diversity.
+
 ### Deliberately not copied into player-facing P003 logic
 
 - diagnosis-first identity generation;
