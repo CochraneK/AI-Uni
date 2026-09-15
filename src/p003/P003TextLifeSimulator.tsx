@@ -9,6 +9,7 @@ import {
   type P003DecisionRecord,
 } from '../../convex/life/p003Personality';
 import { buildP003NarrativeContext } from '../../convex/life/p003Narrative';
+import { buildP003BehaviorPatternReport } from '../../convex/life/p003BehaviorPatterns';
 import type { LifeOriginSnapshot } from '../../convex/life/types';
 import './p003-text.css';
 
@@ -386,6 +387,19 @@ function ReportPage({
   onRestart: () => void;
 }) {
   const report = buildP003PersonalityReport(save.decisions);
+  const patternReport = buildP003BehaviorPatternReport(save.decisions);
+  const rankedPatterns = [...patternReport]
+    .filter((pattern) => pattern.classification !== 'insufficient')
+    .sort((a, b) => {
+      const priority = { cross_context: 3, context_sensitive: 2, emerging: 1, insufficient: 0 };
+      const classDiff = priority[b.classification] - priority[a.classification];
+      return classDiff !== 0
+        ? classDiff
+        : b.evidenceCount * b.directionConsistency - a.evidenceCount * a.directionConsistency;
+    });
+  const stablePatterns = rankedPatterns.filter(
+    (pattern) => pattern.classification === 'cross_context',
+  );
   const bigFive = bigFiveIds
     .map((id) => report.dimensions.find((item) => item.id === id))
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
@@ -420,6 +434,12 @@ function ReportPage({
       ...behavioral.flatMap((trait) => [
         `${trait.label}: ${trait.score}/100`,
         trait.summary,
+        '',
+      ]),
+      '【跨情境与生命周期模式】',
+      ...rankedPatterns.flatMap((pattern) => [
+        `${pattern.label}｜${pattern.classification === 'cross_context' ? '跨情境稳定' : pattern.classification === 'context_sensitive' ? '情境依赖' : '正在形成'}｜领域 ${pattern.distinctDomains}｜阶段 ${pattern.distinctStages}｜方向一致度 ${Math.round(pattern.directionConsistency * 100)}%`,
+        pattern.summary,
         '',
       ]),
       '【人生决策记录】',
@@ -465,12 +485,12 @@ function ReportPage({
         <div>
           <span>THIS LIFE IN ONE SENTENCE</span>
           <h2>
-            {report.strongestPatterns.length > 0
-              ? `这一生里，你最稳定地表现出“${report.strongestPatterns
+            {stablePatterns.length > 0
+              ? `这一生里，真正跨多个领域和人生阶段重复出现的是“${stablePatterns
                   .slice(0, 3)
                   .map((item) => item.label)
-                  .join(' / ')}”相关的选择模式。`
-              : '这一生的选择比较分散，没有出现特别强的单一路径。'}
+                  .join(' / ')}”。`
+              : '目前更明显的是情境化选择；还没有足够证据把某一种反应称为跨情境稳定倾向。'}
           </h2>
         </div>
         <p>{report.caution}</p>
@@ -574,20 +594,28 @@ function ReportPage({
         <header>
           <span>04</span>
           <div>
-            <b>STRONGEST PATTERNS</b>
-            <h2>最稳定的五个模式</h2>
+            <b>TRAIT × SITUATION × LIFE STAGE</b>
+            <h2>哪些是稳定倾向，哪些只是特定情境下的你</h2>
           </div>
         </header>
 
-        <div className="life-text-strong-patterns">
-          {report.strongestPatterns.map((trait, index) => (
-            <article key={trait.id}>
-              <span>{String(index + 1).padStart(2, '0')}</span>
+        <div className="life-text-behavior-list">
+          {rankedPatterns.slice(0, 8).map((pattern) => (
+            <article key={pattern.id}>
               <div>
-                <h3>{trait.label}</h3>
-                <p>{trait.summary}</p>
+                <span>{pattern.label}</span>
+                <b>{Math.round(pattern.directionConsistency * 100)}%</b>
               </div>
-              <strong>{trait.score}</strong>
+              <p>{pattern.summary}</p>
+              <small>
+                {pattern.classification === 'cross_context'
+                  ? '跨情境稳定'
+                  : pattern.classification === 'context_sensitive'
+                    ? '情境依赖'
+                    : '正在形成'}
+                {' · '}
+                {pattern.distinctDomains} 类生活领域 · {pattern.distinctStages} 个人生阶段 · {pattern.evidenceCount} 条证据
+              </small>
             </article>
           ))}
         </div>
@@ -596,6 +624,29 @@ function ReportPage({
       <section className="life-text-report-section">
         <header>
           <span>05</span>
+          <div>
+            <b>STRONGEST PATTERNS</b>
+            <h2>当前最值得继续观察的五个模式</h2>
+          </div>
+        </header>
+
+        <div className="life-text-strong-patterns">
+          {rankedPatterns.slice(0, 5).map((pattern, index) => (
+            <article key={pattern.id}>
+              <span>{String(index + 1).padStart(2, '0')}</span>
+              <div>
+                <h3>{pattern.label}</h3>
+                <p>{pattern.summary}</p>
+              </div>
+              <strong>{Math.round(pattern.directionConsistency * 100)}</strong>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="life-text-report-section">
+        <header>
+          <span>06</span>
           <div>
             <b>LIFE EVIDENCE</b>
             <h2>这份报告来自哪些人生决定</h2>
@@ -620,7 +671,7 @@ function ReportPage({
         <b>人格不是一次选择决定的。</b>
         <p>
           这份报告只总结你在本次模拟世界里的选择模式。幼儿期证据会被自动降权，
-          成年后的重复选择权重更高；未来版本会继续把证据区分为“稳定倾向”和“情境反应”两层。
+          成年后的重复选择权重更高；报告已经把跨领域、跨阶段重复出现的模式与情境性反应分开呈现。
         </p>
       </footer>
     </main>
