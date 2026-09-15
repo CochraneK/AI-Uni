@@ -5,6 +5,7 @@ import {
   type P003LifeStageBandId,
 } from './p003Ontology';
 import type { P003Storylet } from './p003Storylets';
+import type { P003PressureShapeId } from './p003PressureShapes';
 
 export type P003RunPlanItem = {
   storyletId: string;
@@ -12,6 +13,7 @@ export type P003RunPlanItem = {
   stage: P003LifeStageBandId;
   stageLabel: string;
   primaryDomain: P003LifeDomainId;
+  pressureShapes?: P003PressureShapeId[];
 };
 
 export const p003StageEventTargets: Record<P003LifeStageBandId, number> = {
@@ -60,13 +62,26 @@ const chooseDiverseStorylets = (
 ) => {
   const selected: P003Storylet[] = [];
   const domainCounts = new Map<P003LifeDomainId, number>();
+  const pressureCounts = new Map<P003PressureShapeId, number>();
   const remaining = [...candidates];
 
   while (selected.length < target && remaining.length > 0) {
     remaining.sort((a, b) => {
       const domainPenaltyA = domainCounts.get(a.primaryDomain) ?? 0;
       const domainPenaltyB = domainCounts.get(b.primaryDomain) ?? 0;
-      if (domainPenaltyA !== domainPenaltyB) return domainPenaltyA - domainPenaltyB;
+      const pressurePenaltyA = a.pressureShapes.reduce(
+        (sum, shape) => sum + (pressureCounts.get(shape) ?? 0),
+        0,
+      );
+      const pressurePenaltyB = b.pressureShapes.reduce(
+        (sum, shape) => sum + (pressureCounts.get(shape) ?? 0),
+        0,
+      );
+      const diversityPenaltyA = domainPenaltyA * 2 + pressurePenaltyA;
+      const diversityPenaltyB = domainPenaltyB * 2 + pressurePenaltyB;
+      if (diversityPenaltyA !== diversityPenaltyB) {
+        return diversityPenaltyA - diversityPenaltyB;
+      }
 
       const randomA = hash01(`${seed}:${stage}:${a.id}:pick`);
       const randomB = hash01(`${seed}:${stage}:${b.id}:pick`);
@@ -81,6 +96,9 @@ const chooseDiverseStorylets = (
       next.primaryDomain,
       (domainCounts.get(next.primaryDomain) ?? 0) + 1,
     );
+    for (const shape of next.pressureShapes) {
+      pressureCounts.set(shape, (pressureCounts.get(shape) ?? 0) + 1);
+    }
   }
 
   return selected;
@@ -123,6 +141,7 @@ export const buildP003RunPlan = (
         stage: stageDef.id,
         stageLabel: stageDef.label,
         primaryDomain: storylet.primaryDomain,
+        pressureShapes: storylet.pressureShapes,
       });
     }
   }
@@ -135,4 +154,4 @@ export const buildP003RunPlan = (
 };
 
 export const p003RunPlanBoundary =
-  'A run samples from the content catalog instead of consuming the whole catalog. Adding content increases possible lives, not mandatory run length.';
+  'A run samples from the content catalog instead of consuming the whole catalog. Adding content increases possible lives, not mandatory run length. Selection balances both life domains and pressure shapes so a run does not become narratively one-note.';
