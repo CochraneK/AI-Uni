@@ -404,9 +404,28 @@ function ReportPage({
         <p>{report.caution}</p>
       </section>
 
-      <section className="life-text-report-section">
+      <section className="life-text-report-section life-text-narrative-section">
         <header>
           <span>01</span>
+          <div>
+            <b>PROFILE NARRATIVE</b>
+            <h2>人物画像总述</h2>
+          </div>
+        </header>
+
+        <div className="life-text-narrative-grid">
+          {report.narrativeSections.map((section) => (
+            <article key={section.id}>
+              <span>{section.title}</span>
+              <p>{section.text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="life-text-report-section">
+        <header>
+          <span>02</span>
           <div>
             <b>BIG FIVE</b>
             <h2>大五人格倾向</h2>
@@ -450,7 +469,7 @@ function ReportPage({
 
       <section className="life-text-report-section">
         <header>
-          <span>02</span>
+          <span>03</span>
           <div>
             <b>BEHAVIORAL PATTERNS</b>
             <h2>决策与应对画像</h2>
@@ -481,7 +500,7 @@ function ReportPage({
 
       <section className="life-text-report-section">
         <header>
-          <span>03</span>
+          <span>04</span>
           <div>
             <b>STRONGEST PATTERNS</b>
             <h2>最稳定的五个模式</h2>
@@ -504,7 +523,7 @@ function ReportPage({
 
       <section className="life-text-report-section">
         <header>
-          <span>04</span>
+          <span>05</span>
           <div>
             <b>LIFE EVIDENCE</b>
             <h2>这份报告来自哪些人生决定</h2>
@@ -528,8 +547,8 @@ function ReportPage({
       <footer className="life-text-report-footer">
         <b>人格不是一次选择决定的。</b>
         <p>
-          这份报告只总结你在本次模拟世界里的选择模式。未来版本会加入更多关系、
-          价值、职业与压力情境，并将报告证据分成“稳定倾向”和“情境反应”两层。
+          这份报告只总结你在本次模拟世界里的选择模式。幼儿期证据会被自动降权，
+          成年后的重复选择权重更高；未来版本会继续把证据区分为“稳定倾向”和“情境反应”两层。
         </p>
       </footer>
     </main>
