@@ -8,6 +8,7 @@ import {
   buildP003PersonalityReport,
   type P003DecisionRecord,
 } from '../../convex/life/p003Personality';
+import { buildP003NarrativeContext } from '../../convex/life/p003Narrative';
 import type { LifeOriginSnapshot } from '../../convex/life/types';
 import './p003-text.css';
 
@@ -253,6 +254,11 @@ function DecisionPage({
 
   const year = save.birthYear + Math.floor(point.age);
   const prior = save.decisions[save.decisions.length - 1];
+  const narrativeContext = buildP003NarrativeContext(
+    event.id,
+    save.decisions,
+    save.origin,
+  );
 
   return (
     <main className="life-text-shell life-text-play">
@@ -302,6 +308,18 @@ function DecisionPage({
           <span className="life-text-stage">{point.stage} · {formatAge(point.age)}</span>
           <h1>{event.title}</h1>
           <p className="life-text-setup">{event.setup}</p>
+
+          {(narrativeContext.callback || narrativeContext.contextNote) && (
+            <aside className="life-text-memory-return">
+              {narrativeContext.callback && (
+                <p>
+                  <span>过去正在回来</span>
+                  {narrativeContext.callback}
+                </p>
+              )}
+              {narrativeContext.contextNote && <p>{narrativeContext.contextNote}</p>}
+            </aside>
+          )}
 
           {prior && (
             <blockquote className="life-text-last-memory">
