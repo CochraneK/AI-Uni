@@ -419,6 +419,19 @@ npm run dev:p003
 文字版当前使用 localStorage 保存单次人生进度，因此即使没有 Convex 配置也可独立运行。后续接入统一用户身份与管理员数据面板时，再把同一套决策记录同步到后端，不改变游戏核心逻辑。
 
 
+### Current Text Edition engine upgrades
+
+The current Text Edition now uses the extensible engine directly:
+- a run stores a sampled `runPlan` rather than a hard-coded event sequence;
+- the current 14 Storylets remain the starter catalog, but future catalogs can grow without making every run longer;
+- stage targets and domain-diversity selection keep a run bounded;
+- event age is assigned inside the appropriate developmental band;
+- save format v3 migrates earlier v1/v2 local saves;
+- a deterministic recurring cast is stored with the life save;
+- recurring people have birth years and age alongside the player;
+- scene cast is resolved from persistent characters rather than invented anew per event;
+- the report distinguishes cross-context patterns from context-sensitive responses.
+
 ## Extensible architecture
 
 The long-term P003 architecture is specified in [P003_EXTENSIBLE_ARCHITECTURE.md](./P003_EXTENSIBLE_ARCHITECTURE.md).
