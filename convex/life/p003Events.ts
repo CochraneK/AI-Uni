@@ -1,0 +1,319 @@
+import type { LifeEventCategory, LifeSeasonId } from './types';
+
+export type P003EffectMap = Partial<{
+  stress: number;
+  energy: number;
+  support: number;
+  autonomy: number;
+  competence: number;
+  relatedness: number;
+  materialSecurity: number;
+  learningOpportunity: number;
+}>;
+
+export type P003EventChoice = {
+  id: string;
+  label: string;
+  summary: string;
+  immediate: P003EffectMap;
+  historyFlags?: string[];
+  relationshipEffects?: Array<{
+    targetRole: string;
+    trust?: number;
+    closeness?: number;
+    reliability?: number;
+    conflictRepair?: number;
+  }>;
+};
+
+export type P003LifeEventDefinition = {
+  id: string;
+  title: string;
+  category: LifeEventCategory;
+  seasons: LifeSeasonId[];
+  ageRange: [number, number];
+  setup: string;
+  visibleQuestion: string;
+  choices: P003EventChoice[];
+  delayedHooks?: string[];
+  designNote: string;
+};
+
+export const p003StarterEvents: P003LifeEventDefinition[] = [
+  {
+    id: 'toddler_forbidden_drawer',
+    title: '那个不能打开的抽屉',
+    category: 'caregiving',
+    seasons: ['early_childhood'],
+    ageRange: [2, 4],
+    setup: '你对一个总被大人关上的抽屉越来越好奇。今天照护者正忙着做别的事。',
+    visibleQuestion: '你会怎么做？',
+    choices: [
+      {
+        id: 'open_it',
+        label: '偷偷打开看看',
+        summary: '满足好奇，但也可能碰到边界和后果。',
+        immediate: { autonomy: 0.08, stress: 0.03 },
+        historyFlags: ['tests_household_boundary'],
+      },
+      {
+        id: 'ask_first',
+        label: '跑去问为什么不能开',
+        summary: '把好奇变成一次协商。',
+        immediate: { autonomy: 0.05, relatedness: 0.04 },
+        historyFlags: ['asks_about_boundary'],
+      },
+      {
+        id: 'move_on',
+        label: '先去玩别的',
+        summary: '没有哪一种选择天然更“成熟”；它只留下不同经历。',
+        immediate: { energy: 0.02 },
+      },
+    ],
+    delayedHooks: ['caregiver_boundary_response', 'future_curiosity_pattern'],
+    designNote: '同一选择的后果由照护者风格与家庭环境共同决定，不直接给人格加分。',
+  },
+  {
+    id: 'first_school_lunch',
+    title: '午饭时旁边还有一个空位',
+    category: 'school',
+    seasons: ['school_age'],
+    ageRange: [6, 9],
+    setup: '开学不久，你端着饭，看到熟悉同学那桌很挤，另一边坐着一个还不认识的人。',
+    visibleQuestion: '今天坐哪里？',
+    choices: [
+      {
+        id: 'familiar_group',
+        label: '挤到熟人那边',
+        summary: '维持已有连接。',
+        immediate: { relatedness: 0.05 },
+      },
+      {
+        id: 'new_peer',
+        label: '去空位，和陌生同学坐',
+        summary: '可能形成新的关系，也可能只是吃完一顿饭。',
+        immediate: { autonomy: 0.03, stress: 0.02 },
+        historyFlags: ['cross_group_contact'],
+      },
+      {
+        id: 'eat_alone',
+        label: '找个安静位置自己吃',
+        summary: '独处可能是舒服、恢复精力，也可能只是今天不想说话。',
+        immediate: { energy: 0.04, relatedness: -0.01 },
+      },
+    ],
+    delayedHooks: ['peer_network_branch', 'school_belonging_episode'],
+    designNote: '避免把主动社交或独处简单解释为外向/内向优劣。',
+  },
+  {
+    id: 'exam_result_comparison',
+    title: '成绩单发下来了',
+    category: 'exam',
+    seasons: ['school_age', 'adolescence'],
+    ageRange: [10, 17],
+    setup: '你的成绩和预想不完全一样，同学开始互相问分数，家里也会看到结果。',
+    visibleQuestion: '你先处理哪件事？',
+    choices: [
+      {
+        id: 'review_errors',
+        label: '先看错在哪里',
+        summary: '把注意力放在可处理的问题上。',
+        immediate: { competence: 0.05, stress: -0.03, energy: -0.02 },
+        historyFlags: ['problem_focused_school'],
+      },
+      {
+        id: 'compare_peers',
+        label: '先问别人考了多少',
+        summary: '获得社会参照，但情绪后果取决于关系与期待。',
+        immediate: { stress: 0.03, relatedness: 0.01 },
+      },
+      {
+        id: 'put_away',
+        label: '先收起来，晚点再说',
+        summary: '短期降低刺激，但事情仍会回来。',
+        immediate: { stress: -0.02 },
+        delayedHooks: undefined,
+      },
+    ],
+    delayedHooks: ['family_achievement_response', 'study_strategy_update'],
+    designNote: '结果受学校资源、家庭期待、能力经验和偶然波动共同影响。',
+  },
+  {
+    id: 'post_school_crossroads',
+    title: '毕业以后先去哪',
+    category: 'education',
+    seasons: ['emerging_adulthood'],
+    ageRange: [17, 20],
+    setup: '身边的人开始把“下一步”说得像一道只有一个正确答案的题，但你看到的不止一条路。',
+    visibleQuestion: '你准备先投入哪条路线？',
+    choices: [
+      {
+        id: 'university',
+        label: '申请大学或继续升学',
+        summary: '打开校园、专业、同伴和教育资源路线，也带来时间与成本。',
+        immediate: { learningOpportunity: 0.12, materialSecurity: -0.04 },
+        historyFlags: ['path_higher_education'],
+      },
+      {
+        id: 'work',
+        label: '先进入工作',
+        summary: '更早接触收入、组织和职业关系。',
+        immediate: { materialSecurity: 0.06, autonomy: 0.06 },
+        historyFlags: ['path_direct_work'],
+      },
+      {
+        id: 'vocational',
+        label: '学一门更具体的技能',
+        summary: '走职业教育、培训或学徒路线。',
+        immediate: { competence: 0.07, learningOpportunity: 0.06 },
+        historyFlags: ['path_vocational'],
+      },
+      {
+        id: 'pause',
+        label: '先停一下，探索或处理家庭事务',
+        summary: '这不自动是“落后”；时间的代价和收益由资源与情境决定。',
+        immediate: { autonomy: 0.04, materialSecurity: -0.02 },
+        historyFlags: ['path_pause_or_care'],
+      },
+    ],
+    delayedHooks: ['education_work_branch', 'network_opportunity_branch', 'family_expectation_response'],
+    designNote: '大学不是默认主线；不同路线都有独立机会结构和代价。',
+  },
+  {
+    id: 'first_bad_manager',
+    title: '第一次遇到很难合作的上司',
+    category: 'career',
+    seasons: ['early_adulthood'],
+    ageRange: [22, 34],
+    setup: '对方最近反复临时改要求，又在公开场合把责任推给团队。你需要决定下一步怎么处理。',
+    visibleQuestion: '你会先做什么？',
+    choices: [
+      {
+        id: 'document_and_talk',
+        label: '留记录，再约一次正式沟通',
+        summary: '尝试改变具体工作关系。',
+        immediate: { stress: 0.02, autonomy: 0.04, competence: 0.03 },
+        historyFlags: ['work_boundary_attempt'],
+      },
+      {
+        id: 'seek_allies',
+        label: '先找可信同事或制度资源了解情况',
+        summary: '把问题放回组织环境，而不是全归因于自己。',
+        immediate: { support: 0.05, stress: -0.02 },
+        historyFlags: ['institutional_support_use'],
+      },
+      {
+        id: 'prepare_exit',
+        label: '开始悄悄找下一份机会',
+        summary: '减少改变当前关系的投入，转向退出策略。',
+        immediate: { autonomy: 0.05, energy: -0.04 },
+        historyFlags: ['career_exit_preparation'],
+      },
+    ],
+    delayedHooks: ['manager_response', 'job_market_opportunity', 'career_transition'],
+    designNote: '组织条件是独立因果层，不把糟糕工作环境解释成玩家人格问题。',
+  },
+  {
+    id: 'midlife_parent_call',
+    title: '那通开始变频繁的电话',
+    category: 'family',
+    seasons: ['middle_adulthood'],
+    ageRange: [40, 60],
+    setup: '家里长辈最近需要越来越多帮助，而你的工作、伴侣、孩子或个人生活也都占着时间。',
+    visibleQuestion: '这次你怎么安排？',
+    choices: [
+      {
+        id: 'take_more_care',
+        label: '自己多承担一些',
+        summary: '增加照护投入，也会挤压其他资源。',
+        immediate: { relatedness: 0.05, energy: -0.08, stress: 0.05 },
+        historyFlags: ['caregiving_load_increase'],
+      },
+      {
+        id: 'share_care',
+        label: '和家人重新分工',
+        summary: '尝试把照护从个人义务变成系统协商。',
+        immediate: { autonomy: 0.03, stress: 0.01 },
+        historyFlags: ['family_care_negotiation'],
+      },
+      {
+        id: 'seek_services',
+        label: '看看社区或专业服务能不能接一部分',
+        summary: '调用制度资源，但是否可得取决于环境。',
+        immediate: { support: 0.05, materialSecurity: -0.03 },
+        historyFlags: ['formal_care_resource_use'],
+      },
+    ],
+    delayedHooks: ['caregiver_burden', 'family_role_revision', 'work_family_spillover'],
+    designNote: '照护选择受钱、时间、制度和关系历史共同约束。',
+  },
+  {
+    id: 'retirement_first_monday',
+    title: '不用上班的第一个星期一',
+    category: 'retirement',
+    seasons: ['retirement'],
+    ageRange: [60, 78],
+    setup: '闹钟没有必须响的理由。过去几十年的时间结构突然空出了一大块。',
+    visibleQuestion: '你最先想把时间放在哪里？',
+    choices: [
+      {
+        id: 'old_interest',
+        label: '捡回一个很久没做的兴趣',
+        summary: '重新连接曾被工作挤掉的自我部分。',
+        immediate: { energy: 0.04, competence: 0.03, autonomy: 0.06 },
+        historyFlags: ['reopened_old_interest'],
+      },
+      {
+        id: 'people',
+        label: '约重要的人见面',
+        summary: '把时间投入关系。',
+        immediate: { relatedness: 0.07, support: 0.03 },
+      },
+      {
+        id: 'new_role',
+        label: '找个新的长期角色',
+        summary: '社区、兼职、照护、指导或创作都可能成为新结构。',
+        immediate: { competence: 0.04, autonomy: 0.03 },
+        historyFlags: ['retirement_role_reconstruction'],
+      },
+    ],
+    delayedHooks: ['later_life_network_change', 'meaning_reconstruction'],
+    designNote: '退休不是数值下降阶段，而是时间、角色和关系结构的重组。',
+  },
+  {
+    id: 'life_review_old_message',
+    title: '很久以前的一条消息',
+    category: 'relationship',
+    seasons: ['life_review'],
+    ageRange: [72, 100],
+    setup: '整理旧东西时，你看到一段几十年前没有继续下去的关系记录。那时你做过一个决定，后来人生就走向了别处。',
+    visibleQuestion: '现在你想怎么面对它？',
+    choices: [
+      {
+        id: 'reconnect',
+        label: '如果还能联系，就发一条消息',
+        summary: '不是为了改写过去，而是允许历史重新进入现在。',
+        immediate: { stress: 0.02, relatedness: 0.04 },
+        historyFlags: ['late_life_reconnection_attempt'],
+      },
+      {
+        id: 'reflect',
+        label: '不联系，只认真回想那段经历',
+        summary: '把未完成的故事重新放进自己的人生叙事。',
+        immediate: { stress: -0.02 },
+        historyFlags: ['life_review_reflection'],
+      },
+      {
+        id: 'leave_it',
+        label: '把东西收好，继续整理',
+        summary: '并非所有遗憾都需要“解决”。',
+        immediate: { autonomy: 0.03 },
+      },
+    ],
+    delayedHooks: ['life_review_callback', 'regret_integration'],
+    designNote: '终章不计算人生总分，而是回调真实发生过的历史。',
+  },
+];
+
+export const p003EventDesignBoundary =
+  'Choices create history, trade-offs and changing probabilities. They are not covert clinical items and must not be scored as diagnoses.';
