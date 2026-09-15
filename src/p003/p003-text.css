@@ -883,3 +883,34 @@
     grid-column: auto;
   }
 }
+
+
+.life-text-report-restart {
+  min-height: 3.3rem;
+  border: 1px solid var(--life-line);
+  background: transparent;
+  padding: .7rem 1rem;
+  color: var(--life-ink);
+  cursor: pointer;
+}
+
+.life-text-report-restart:hover {
+  border-color: var(--life-ink);
+  background: rgba(255,255,255,.35);
+}
+
+.life-text-shell button:focus-visible,
+.life-text-shell a:focus-visible,
+.life-text-shell summary:focus-visible {
+  outline: 2px solid var(--life-accent);
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .life-text-shell *,
+  .life-text-shell *::before,
+  .life-text-shell *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}
