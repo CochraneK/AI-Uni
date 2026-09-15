@@ -13,6 +13,12 @@ import {
 import { buildP003NarrativeContext } from '../../convex/life/p003Narrative';
 import { buildP003BehaviorPatternReport } from '../../convex/life/p003BehaviorPatterns';
 import type { LifeOriginSnapshot } from '../../convex/life/types';
+import type { P003CharacterBlueprint } from '../../convex/life/p003Characters';
+import {
+  characterAgeAtPlayerAge,
+  generateP003CoreCast,
+  resolveP003StoryletCast,
+} from '../../convex/life/p003Cast';
 import './p003-text.css';
 
 type MeterKey =
@@ -28,7 +34,7 @@ type MeterKey =
 type MeterState = Record<MeterKey, number>;
 
 type TextLifeSave = {
-  version: 2;
+  version: 3;
   seed: string;
   birthYear: number;
   origin: LifeOriginSnapshot;
@@ -36,9 +42,14 @@ type TextLifeSave = {
   meters: MeterState;
   decisions: P003DecisionRecord[];
   runPlan: P003RunPlanItem[];
+  cast: P003CharacterBlueprint[];
 };
 
-type LegacyTextLifeSave = Omit<TextLifeSave, 'version' | 'runPlan'> & {
+type LegacyTextLifeSaveV2 = Omit<TextLifeSave, 'version' | 'cast'> & {
+  version: 2;
+};
+
+type LegacyTextLifeSaveV1 = Omit<TextLifeSave, 'version' | 'runPlan' | 'cast'> & {
   version: 1;
 };
 
@@ -106,13 +117,26 @@ const loadSave = (): TextLifeSave | undefined => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return undefined;
-    const parsed = JSON.parse(raw) as TextLifeSave | LegacyTextLifeSave;
-    if (parsed.version === 2) return parsed;
+    const parsed = JSON.parse(raw) as
+      | TextLifeSave
+      | LegacyTextLifeSaveV2
+      | LegacyTextLifeSaveV1;
+    if (parsed.version === 3) return parsed;
+    if (parsed.version === 2) {
+      const migrated: TextLifeSave = {
+        ...parsed,
+        version: 3,
+        cast: generateP003CoreCast(parsed.seed, parsed.origin),
+      };
+      saveLocal(migrated);
+      return migrated;
+    }
     if (parsed.version === 1) {
       const migrated: TextLifeSave = {
         ...parsed,
-        version: 2,
+        version: 3,
         runPlan: legacyRunPlan(),
+        cast: generateP003CoreCast(parsed.seed, parsed.origin),
       };
       saveLocal(migrated);
       return migrated;
@@ -293,6 +317,7 @@ function DecisionPage({
     save.decisions,
     save.origin,
   );
+  const sceneCast = resolveP003StoryletCast(event, save.cast);
 
   return (
     <main className="life-text-shell life-text-play">
@@ -340,6 +365,26 @@ function DecisionPage({
             MEMORY {String(save.eventIndex + 1).padStart(2, '0')}
           </div>
           <span className="life-text-stage">{point.stageLabel} · {formatAge(point.age)}</span>
+          {sceneCast.length > 0 && (
+            <div className="life-text-scene-cast">
+              <span>本段人物</span>
+              <div>
+                {sceneCast.map((character) => {
+                  const age = characterAgeAtPlayerAge(
+                    character,
+                    save.birthYear,
+                    point.age,
+                  );
+                  return (
+                    <b key={character.id}>
+                      {character.displayName}
+                      {age !== undefined ? ` · ${age}岁` : ''}
+                    </b>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <h1>{event.title}</h1>
           <p className="life-text-setup">{event.setup}</p>
 
@@ -445,6 +490,13 @@ function ReportPage({
       report.title,
       report.subtitle,
       '',
+      '【这一生的重要人物】',
+      ...save.cast.flatMap((character) => [
+        `${character.displayName}｜${character.socialRoles.join(' / ')}｜出生于 ${character.birthYear ?? '未知'}`,
+        `  想要：${character.visibleWant}`,
+        `  内在需要：${character.underlyingNeed}`,
+        '',
+      ]),
       '【人物画像总述】',
       ...report.narrativeSections.flatMap((section) => [
         section.title,
@@ -721,7 +773,7 @@ export default function P003TextLifeSimulator() {
 
   const start = () => {
     const next: TextLifeSave = {
-      version: 2,
+      version: 3,
       seed,
       birthYear,
       origin,
@@ -729,6 +781,7 @@ export default function P003TextLifeSimulator() {
       meters: initialMeters(origin),
       decisions: [],
       runPlan: buildP003RunPlan(seed, p003StarterStorylets),
+      cast: generateP003CoreCast(seed, origin),
     };
     saveLocal(next);
     setSave(next);
