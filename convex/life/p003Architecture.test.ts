@@ -5,6 +5,10 @@ import {
   generateP003CoreCast,
 } from './p003Cast';
 import { generateLifeOrigin } from './origin';
+import {
+  adaptAIPersonaV12ToP003Kernel,
+  characterBlueprintFromPersonaKernel,
+} from './p003PersonaInterop';
 import { buildP003CoverageMatrix } from './p003Coverage';
 import { p003LifeDomains, p003StageBands } from './p003Ontology';
 import {
@@ -101,6 +105,53 @@ describe('P003 extensible architecture', () => {
     );
     expect(selected.every((storylet) => storylet.prerequisites.ageRange[0] <= 8)).toBe(true);
     expect(selected.every((storylet) => storylet.prerequisites.ageRange[1] >= 8)).toBe(true);
+  });
+
+  test('AI-persona exports adapt into a versioned persona kernel without making diagnosis the character identity', () => {
+    const kernel = adaptAIPersonaV12ToP003Kernel(
+      {
+        id: 'persona-001',
+        label: '测试人物',
+        age: 28,
+        gender: 'female',
+        occupation: '软件和信息技术服务人员',
+        occupation_code: '4-04',
+        education: '本科',
+        locale: 'urban',
+        marital_status: 'single',
+        primary_diagnosis: '重度抑郁障碍',
+        comorbidities: ['广泛性焦虑障碍'],
+        archetype_key: 'hidden_sufferer',
+        archetype_name: '隐忍承担型',
+        ocean: { O: 6, C: 5, E: 3, A: 7, N: 8 },
+        personality_tags: ['谨慎'],
+        core_desire: '被理解',
+        core_fear: '成为负担',
+        formative_wound: '长期忽视自己的需要',
+        compensatory_desire: '证明自己值得被需要',
+        storr_need: '允许自己接受帮助',
+        life_events: [
+          {
+            domain: 'occupation',
+            stage: 'adulthood',
+            name_cn: '第一次正式工作',
+            valence: 'neutral',
+          },
+        ],
+      },
+      1998,
+    );
+
+    expect(kernel.schemaVersion).toBe('persona-kernel.v1');
+    expect(kernel.health?.primaryConditionId).toBe('重度抑郁障碍');
+    expect(kernel.health?.visibility).toBe('private_runtime');
+    expect(kernel.priorLifeEvents?.[0]?.p003PrimaryDomain).toBe('work_career');
+
+    const character = characterBlueprintFromPersonaKernel(kernel, 'coworker');
+    expect(character.displayName).toBe('测试人物');
+    expect(character.visibleWant).toBe('证明自己值得被需要');
+    expect(character.privateFacts[0]).toContain('health-layer:');
+    expect(character.displayName).not.toContain('抑郁');
   });
 
   test('linked-life cast is deterministic and ages alongside the player', () => {
