@@ -2,6 +2,7 @@ import type { LifeOriginSnapshot, RelationshipType } from './types';
 import type { P003CharacterBlueprint } from './p003Characters';
 import type { P003Storylet } from './p003Storylets';
 import { enrichCharacterWithNarrativeKernel } from './p003Archetypes';
+import { createP003SurfaceProfile } from './p003SurfaceProfiles';
 
 const names = ['林然', '周宁', '陈安', '许澄', '王禾', '赵青', '沈知', '李言', '苏遥', '唐予'];
 
@@ -215,6 +216,10 @@ export const generateP003CoreCast = (
       ...character,
       values: enrichment.values,
       narrativeKernel: enrichment.narrativeKernel,
+      surfaceProfile: createP003SurfaceProfile(
+        `${seed}:${character.id}`,
+        enrichment.narrativeKernel,
+      ),
       arcThreads: [
         ...character.arcThreads,
         {
