@@ -318,6 +318,8 @@ function DecisionPage({
     save.origin,
   );
   const sceneCast = resolveP003StoryletCast(event, save.cast);
+  const sceneCharacter = sceneCast[0];
+  const sceneCharacterKernel = sceneCharacter?.narrativeKernel;
 
   return (
     <main className="life-text-shell life-text-play">
@@ -387,6 +389,17 @@ function DecisionPage({
           )}
           <h1>{event.title}</h1>
           <p className="life-text-setup">{event.setup}</p>
+
+          {sceneCharacter && sceneCharacterKernel && (
+            <aside className="life-text-character-texture">
+              <span>关于 {sceneCharacter.displayName}</span>
+              <p>{sceneCharacterKernel.oneLiner}</p>
+              <small>
+                这次处境也触碰到一个长期没有完全解决的问题：
+                {sceneCharacterKernel.arcQuestion}
+              </small>
+            </aside>
+          )}
 
           {(narrativeContext.callback || narrativeContext.contextNote) && (
             <aside className="life-text-memory-return">
