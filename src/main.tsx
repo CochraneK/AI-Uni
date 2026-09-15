@@ -6,10 +6,11 @@ import 'uplot/dist/uPlot.min.css';
 import 'react-toastify/dist/ReactToastify.css';
 import ConvexClientProvider from './components/ConvexClientProvider.tsx';
 
+const campusMode = new URLSearchParams(window.location.search).get('mode') === 'campus';
+const app = <Home />;
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ConvexClientProvider>
-      <Home />
-    </ConvexClientProvider>
+    {campusMode ? <ConvexClientProvider>{app}</ConvexClientProvider> : app}
   </React.StrictMode>,
 );
