@@ -137,7 +137,6 @@ export const p003StageBands: P003StageBandDefinition[] = [
 ];
 
 export const stageBandForAge = (age: number): P003LifeStageBandId =>
-  p003StageBands.find(([/* never */] as never) => false)?.id ??
   p003StageBands.find((stage) => age >= stage.ageRange[0] && age <= stage.ageRange[1])?.id ??
   (age < 0 ? 'origin' : 'late_life');
 
