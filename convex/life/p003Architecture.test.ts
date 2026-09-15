@@ -6,6 +6,7 @@ import {
   p003PsychologyRegistry,
   p003ResearchOnlyConstructs,
 } from './p003PsychologyRegistry';
+import { buildP003PsychologyCoverage } from './p003PsychologyCoverage';
 import {
   p003StarterStorylets,
   registerP003ContentPack,
@@ -26,6 +27,13 @@ describe('P003 extensible architecture', () => {
       expect(policy.userVisible).toBe(false);
       expect(policy.gameScoreMode).toBe('research_association_only');
     }
+  });
+
+  test('audits every ai-uni psychology construct without inventing missing evidence', () => {
+    const coverage = buildP003PsychologyCoverage(p003StarterStorylets);
+    expect(coverage).toHaveLength(Object.keys(constructRegistry).length);
+    const researchOnly = coverage.filter((row) => row.surface === 'research_only');
+    expect(researchOnly.every((row) => row.status === 'research_only_no_content' || row.status === 'thin')).toBe(true);
   });
 
   test('maps every current authored event into exactly one primary domain and narrative function', () => {
