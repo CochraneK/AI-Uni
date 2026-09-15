@@ -11,6 +11,7 @@ import {
   type P003NarrativeFunctionId,
   type P003NarrativeTechniqueId,
 } from './p003Ontology';
+import type { P003PressureShapeId } from './p003PressureShapes';
 
 export type P003StoryletPrerequisites = {
   ageRange: [number, number];
@@ -44,6 +45,7 @@ export type P003Storylet = {
   lifeStageBands: P003LifeStageBandId[];
   narrativeFunction: P003NarrativeFunctionId;
   techniques: P003NarrativeTechniqueId[];
+  pressureShapes: P003PressureShapeId[];
   prerequisites: P003StoryletPrerequisites;
   castSlots: RelationshipType[];
   choices: P003StoryletChoice[];
@@ -91,6 +93,23 @@ const narrativeFunctionOverrides: Partial<Record<string, P003NarrativeFunctionId
   midlife_parent_call: 'relationship_move',
   retirement_first_monday: 'reversal',
   life_review_old_message: 'reflection',
+};
+
+const pressureShapeOverrides: Partial<Record<string, P003PressureShapeId[]>> = {
+  first_favorite_object: ['neutral', 'opportunity'],
+  toddler_forbidden_drawer: ['conflict', 'uncertainty'],
+  first_public_meltdown: ['conflict', 'humiliation'],
+  playground_turn: ['belonging', 'conflict'],
+  caregiver_late_pickup: ['uncertainty', 'belonging'],
+  moving_house_childhood: ['loss', 'transition'],
+  first_school_gate: ['transition', 'uncertainty', 'opportunity'],
+  first_school_lunch: ['belonging'],
+  exam_result_comparison: ['achievement', 'humiliation'],
+  post_school_crossroads: ['transition', 'opportunity', 'uncertainty'],
+  first_bad_manager: ['entrapment', 'conflict', 'role_overload'],
+  midlife_parent_call: ['caregiving', 'role_overload', 'conflict'],
+  retirement_first_monday: ['transition', 'loss', 'opportunity'],
+  life_review_old_message: ['loss', 'belonging', 'transition'],
 };
 
 const castOverrides: Partial<Record<string, RelationshipType[]>> = {
@@ -142,6 +161,7 @@ export const p003StarterStorylets: P003Storylet[] = p003StarterEvents.map((event
   lifeStageBands: lifeStageBandsForRange(event.ageRange),
   narrativeFunction: narrativeFunctionOverrides[event.id] ?? 'reveal_character',
   techniques: event.delayedHooks?.length ? ['delayed_consequence', 'choice_echo'] : ['setup'],
+  pressureShapes: pressureShapeOverrides[event.id] ?? ['neutral'],
   prerequisites: {
     ageRange: event.ageRange,
     seasons: event.seasons,
