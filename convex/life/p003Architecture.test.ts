@@ -198,6 +198,9 @@ describe('P003 extensible architecture', () => {
         formative_wound: '长期忽视自己的需要',
         compensatory_desire: '证明自己值得被需要',
         storr_need: '允许自己接受帮助',
+        triggers: ['被公开否定'],
+        safety_behaviors: ['先把情绪藏起来'],
+        hidden_experiences: ['曾经有一次求助被轻视'],
         life_events: [
           {
             domain: 'occupation',
@@ -214,6 +217,8 @@ describe('P003 extensible architecture', () => {
     expect(kernel.schemaVersion).toBe('persona-kernel.v1');
     expect(kernel.health?.primaryConditionId).toBe('重度抑郁障碍');
     expect(kernel.health?.visibility).toBe('private_runtime');
+    expect(kernel.privateNarrative?.sensitivities).toEqual(['被公开否定']);
+    expect(kernel.privateNarrative?.hiddenExperiences).toEqual(['曾经有一次求助被轻视']);
     expect(kernel.priorLifeEvents?.[0]?.p003PrimaryDomain).toBe('work_career');
     expect(kernel.priorLifeEvents?.[0]?.pressureShapes).toEqual(['entrapment']);
 
@@ -227,6 +232,9 @@ describe('P003 extensible architecture', () => {
     expect(character.narrativeKernel?.source).toBe('external_persona');
     expect(character.surfaceProfile?.source).toBe('external_persona');
     expect(character.surfaceProfile?.ocean?.E).toBe(3);
+    expect(character.sensitivities).toEqual(['被公开否定']);
+    expect(character.selfProtectivePatterns).toEqual(['先把情绪藏起来']);
+    expect(character.hiddenHistory?.[0]?.state).toBe('private');
   });
 
   test('linked-life cast is deterministic and ages alongside the player', () => {
@@ -239,6 +247,12 @@ describe('P003 extensible architecture', () => {
       castA.every(
         (character) =>
           character.surfaceProfile?.source === 'p003_archetype_expression',
+      ),
+    ).toBe(true);
+    expect(castA.every((character) => (character.hiddenHistory?.length ?? 0) > 0)).toBe(true);
+    expect(
+      castA.every((character) =>
+        character.hiddenHistory?.every((item) => item.state === 'private'),
       ),
     ).toBe(true);
     const caregiver = castA.find((character) => character.id === 'primary-caregiver');
