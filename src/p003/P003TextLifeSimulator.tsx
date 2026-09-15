@@ -375,6 +375,57 @@ function ReportPage({
     (item) => !bigFiveIds.includes(item.id as (typeof bigFiveIds)[number]),
   );
 
+  const downloadReport = () => {
+    const lines = [
+      report.title,
+      report.subtitle,
+      '',
+      '【人物画像总述】',
+      ...report.narrativeSections.flatMap((section) => [
+        section.title,
+        section.text,
+        '',
+      ]),
+      '【大五人格倾向】',
+      ...bigFive.flatMap((trait) => [
+        `${trait.label}: ${trait.score}/100（证据 ${trait.evidenceCount} 条，置信度 ${Math.round(
+          trait.confidence * 100,
+        )}%）`,
+        trait.summary,
+        ...trait.evidence.map(
+          (item) =>
+            `  - ${formatAge(item.age)}｜${item.choiceLabel}｜${item.interpretation}`,
+        ),
+        '',
+      ]),
+      '【决策与应对画像】',
+      ...behavioral.flatMap((trait) => [
+        `${trait.label}: ${trait.score}/100`,
+        trait.summary,
+        '',
+      ]),
+      '【人生决策记录】',
+      ...save.decisions.map(
+        (decision, index) =>
+          `${String(index + 1).padStart(2, '0')}. ${formatAge(decision.age)}｜${decision.eventTitle}｜${decision.choiceLabel}`,
+      ),
+      '',
+      '【解释边界】',
+      report.caution,
+      '幼儿期证据在算法中自动降权，成年后的重复选择权重更高。',
+    ];
+
+    const blob = new Blob([lines.join('\n')], {
+      type: 'text/plain;charset=utf-8',
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `p003-life-report-${save.seed}.txt`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <main className="life-text-shell life-text-report">
       <header className="life-text-report-hero">
@@ -382,7 +433,10 @@ function ReportPage({
         <h1>{report.title}</h1>
         <p>{report.subtitle}</p>
         <div className="life-text-report-actions">
-          <button className="life-text-primary" onClick={onRestart}>
+          <button className="life-text-primary" onClick={downloadReport}>
+            下载完整报告
+          </button>
+          <button className="life-text-report-restart" onClick={onRestart}>
             重开另一生
           </button>
           <a href="?mode=campus">返回 AI-Uni 校园版</a>
