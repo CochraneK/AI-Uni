@@ -1,5 +1,6 @@
 import {
   p003StageBands,
+  stageBandForAge,
   type P003LifeDomainId,
   type P003LifeStageBandId,
 } from './p003Ontology';
@@ -85,6 +86,11 @@ const chooseDiverseStorylets = (
   return selected;
 };
 
+const preferredStageForStorylet = (storylet: P003Storylet): P003LifeStageBandId => {
+  const [minAge, maxAge] = storylet.prerequisites.ageRange;
+  return stageBandForAge((minAge + maxAge) / 2);
+};
+
 export const buildP003RunPlan = (
   seed: string,
   storylets: P003Storylet[],
@@ -98,6 +104,7 @@ export const buildP003RunPlan = (
       (storylet) =>
         storylet.active &&
         storylet.lifeStageBands.includes(stageDef.id) &&
+        preferredStageForStorylet(storylet) === stageDef.id &&
         !selectedIds.has(storylet.id),
     );
 
