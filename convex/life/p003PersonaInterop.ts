@@ -1,4 +1,5 @@
 import type {
+  P003CharacterArcType,
   P003CharacterBlueprint,
   P003CharacterValueId,
 } from './p003Characters';
@@ -7,6 +8,7 @@ import type {
   P003LifeStageBandId,
 } from './p003Ontology';
 import type { RelationshipType } from './types';
+import type { P003PressureShapeId } from './p003PressureShapes';
 
 export type P003PersonaSchemaVersion = 'persona-kernel.v1';
 
@@ -65,6 +67,7 @@ export type P003PersonaLifeEventSeed = {
   description?: string;
   p003Stage?: P003LifeStageBandId;
   p003PrimaryDomain?: P003LifeDomainId;
+  pressureShapes?: P003PressureShapeId[];
   tags?: string[];
 };
 
@@ -139,6 +142,15 @@ const aiPersonaStageMap: Record<string, P003LifeStageBandId[]> = {
   adolescence: ['adolescence'],
   adulthood: ['emerging_adulthood', 'early_adulthood'],
   mid_older: ['middle_adulthood', 'later_adulthood', 'late_life'],
+};
+
+const aiPersonaEventTypeMap: Record<string, P003PressureShapeId[]> = {
+  loss: ['loss'],
+  danger: ['danger'],
+  humiliation: ['humiliation'],
+  entrapment: ['entrapment'],
+  positive: ['opportunity'],
+  neutral: ['neutral'],
 };
 
 const normalizeValues = (values?: Record<string, unknown>): string[] =>
@@ -232,6 +244,10 @@ export const adaptAIPersonaV12ToP003Kernel = (
         title,
         valence: typeof event.valence === 'string' ? event.valence : undefined,
         p003PrimaryDomain: mapAIPersonaDomainToP003(sourceDomain),
+        pressureShapes:
+          typeof event.event_type === 'string'
+            ? aiPersonaEventTypeMap[event.event_type] ?? []
+            : [],
         tags: ['imported-ai-persona'],
       }];
     }),
@@ -262,6 +278,13 @@ const inferCharacterValues = (
     return valueMap[normalized] ? [valueMap[normalized]] : [];
   });
   return [...new Set(mapped)].slice(0, 5);
+};
+
+const normalizeArcType = (arcType?: string): P003CharacterArcType => {
+  if (arcType === 'positive') return 'positive_change';
+  if (arcType === 'negative') return 'negative_change';
+  if (arcType === 'flat') return 'flat';
+  return 'open';
 };
 
 export const characterBlueprintFromPersonaKernel = (
@@ -308,6 +331,36 @@ export const characterBlueprintFromPersonaKernel = (
         status: 'latent',
       }]
     : [],
+  narrativeKernel:
+    kernel.archetype?.key ||
+    kernel.psychology.formativeWound ||
+    kernel.psychology.compensatoryDesire ||
+    kernel.psychology.innerNeed
+      ? {
+          archetypeKey: kernel.archetype?.key ?? `external:${kernel.sourcePersonaId}`,
+          archetypeName: kernel.archetype?.name ?? '外部人设',
+          oneLiner:
+            kernel.archetype?.oneLiner ??
+            kernel.psychology.compensatoryDesire ??
+            kernel.psychology.coreDesire ??
+            '来自外部 Persona 的叙事内核',
+          formativePressure:
+            kernel.psychology.formativeWound ?? '未提供明确形成性压力',
+          compensatoryStrategy:
+            kernel.psychology.compensatoryDesire ?? '未提供明确补偿策略',
+          developmentalNeed:
+            kernel.psychology.innerNeed ?? '未提供明确发展需要',
+          coreDesire:
+            kernel.psychology.coreDesire ?? '维持重要生活方向',
+          coreFear:
+            kernel.psychology.coreFear ?? '失去重要关系、资源或自我方向',
+          arcType: normalizeArcType(kernel.psychology.arcType),
+          arcQuestion:
+            kernel.psychology.arcDescription ??
+            '这个人会如何在既有策略与新的生活要求之间变化？',
+          source: 'external_persona',
+        }
+      : undefined,
 });
 
 export const p003PersonaInteropPrinciples = [
@@ -317,4 +370,6 @@ export const p003PersonaInteropPrinciples = [
   'P003 may enrich an imported persona over time but should not silently rewrite the source persona kernel.',
   'The shared interface is language-neutral and versioned so Python AI-persona and TypeScript P003 can evolve independently.',
   'AI-persona current 6-domain × 4-stage event taxonomy is treated as a lossy legacy source; P003 keeps its richer 10-domain × 9-stage ontology.',
+  'AI-persona archetype/wound/desire/need/arc fields map directly into the P003 narrative kernel when available.',
+  'AI-persona loss/danger/humiliation/entrapment event types map into P003 pressure shapes; future shared schemas should export these explicitly.',
 ] as const;
