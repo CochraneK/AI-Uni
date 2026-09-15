@@ -457,3 +457,75 @@ Human Persona Ontology
 ```
 
 P003 can consume this schema for NPC generation while preserving its own dynamic simulation engine.
+
+## 15. What P003 learns from AI-persona
+
+P003 deliberately reuses the strongest **engineering ideas** from the separate AI-persona project while changing their interpretation for a lifespan game.
+
+### Adopted now
+
+1. **Finite archetype grid before surface randomness**
+   - AI-persona showed that random OCEAN/tags/events can create many superficial combinations while deep motives remain repetitive.
+   - P003 now has a finite, auditable non-clinical narrative-archetype grid.
+   - Each recurring NPC receives a narrative kernel:
+     - formative pressure;
+     - compensatory strategy;
+     - developmental need;
+     - core desire;
+     - core fear;
+     - arc type;
+     - unresolved arc question.
+   - Surface details may vary, but deep character identity remains inspectable.
+
+2. **Wound → strategy → need → arc as a writing chain**
+   - P003 adapts AI-persona's Storr/character-arc chain.
+   - The wording is intentionally softened to **formative pressure → compensatory strategy → developmental need**.
+   - It is a narrative hypothesis used to generate callbacks and change arcs, not a clinical explanation of a real person.
+
+3. **Event shape beyond positive/negative valence**
+   - P003 Storylets now carry pressure/affordance shapes:
+     loss, danger, humiliation, entrapment, role overload, uncertainty, conflict, belonging, opportunity, achievement, transition, caregiving and neutral.
+   - Coverage audits now inspect these shapes so a content library cannot become emotionally one-note.
+
+4. **Cross-constraint auditing**
+   - Inspired by AI-persona's cross-constraint module.
+   - P003 validates age × role × domain × narrative function × psychological signal × research boundary.
+   - Rare lives remain possible; soft warnings request author justification rather than deleting uncommon trajectories.
+
+5. **Versioned population priors**
+   - Birth-context sampling weights were removed from `origin.ts` and placed in a versioned prior set.
+   - Every prior set must declare provenance and whether it claims population representativeness.
+   - The current default explicitly does **not** claim to describe a real population.
+
+6. **Seed reproducibility**
+   - AI-persona and P003 now share the same philosophy: generated people/lives should be reproducible from stable seeds wherever possible.
+
+### Deliberately not copied into player-facing P003 logic
+
+- diagnosis-first identity generation;
+- diagnosis → gender/education/occupation deterministic implications;
+- automatic clinical-risk inference from Storylet choices;
+- ACE dose-response or LCU totals as a player personality/health score;
+- OCEAN overwriting a deeper narrative archetype;
+- “mental disorder” as the primary description of an NPC.
+
+These may be useful in a separate research/clinical simulation layer, but they are not appropriate defaults for the life-game experience.
+
+### Future interoperation
+
+The adapter in `p003PersonaInterop.ts` already maps:
+- AI-persona demographics / occupation / OCEAN / values;
+- archetype key/name/one-liner;
+- formative wound / compensatory desire / need;
+- character arc;
+- health layer;
+- prior life events;
+- loss/danger/humiliation/entrapment event types;
+
+into:
+- a versioned P003 Persona Kernel;
+- a persistent P003 Character Blueprint;
+- the same P003 narrative-kernel format used by native NPCs;
+- P003 pressure-shape tags.
+
+The long-term target is a shared language-neutral schema rather than direct imports between the Python and TypeScript repositories.
