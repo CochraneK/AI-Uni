@@ -2,6 +2,7 @@ import type { ConstructId } from '../assessment/constructs';
 import type { LifeSeasonId, RelationshipType } from './types';
 import { p003StarterEvents, type P003EffectMap } from './p003Events';
 import { p003ChoiceSignals } from './p003Personality';
+import { currentP003ReportBridge } from './p003PsychologyRegistry';
 import {
   legacyCategoryPrimaryDomain,
   stageBandForAge,
@@ -119,7 +120,13 @@ const lifeStageBandsForRange = ([min, max]: [number, number]): P003LifeStageBand
 
 const signalIdsForChoice = (eventId: string, choiceId: string): string[] => {
   const signal = p003ChoiceSignals[`${eventId}:${choiceId}`];
-  return signal ? Object.keys(signal.scores) : [];
+  if (!signal) return [];
+  return Object.keys(signal.scores).map(
+    (dimensionId) =>
+      currentP003ReportBridge[
+        dimensionId as keyof typeof currentP003ReportBridge
+      ] ?? dimensionId,
+  );
 };
 
 export const p003StarterStorylets: P003Storylet[] = p003StarterEvents.map((event) => ({
